@@ -1,0 +1,10 @@
+# application-local.yaml 로 복사해서 사용 (gitignore 대상)
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/lasteat?serverTimezone=Asia/Seoul
+    username: root
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
