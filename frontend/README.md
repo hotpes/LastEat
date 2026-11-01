@@ -53,7 +53,7 @@ app/src/main/java/com/lasteat/app/
 
 ## 아직 정해야 할 것
 
-- [ ] 지도 SDK (네이버/카카오) → `ExploreScreen`의 `MapPlaceholder` 교체
+- [ ] 지도 SDK  → `ExploreScreen`의 `MapPlaceholder` 교체
 - [ ] 이미지 로더 (예: Coil) → `MainActivity`에서 `LocalImageContent` 주입
 - [ ] 카카오 로그인 → `MainScaffold`의 `fakeLogin` 교체
 - [ ] 식당 상세 · 검색 · 혜택 상세 화면 (지금은 "준비 중" 스낵바)
