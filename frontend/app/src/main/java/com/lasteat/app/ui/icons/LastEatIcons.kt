@@ -99,4 +99,28 @@ object LastEatIcons {
         "Chat",
         "M12 4C7 4 3 7.1 3 11c0 2.5 1.6 4.6 4 5.9L6 21l4.4-2.9c.5.1 1 .1 1.6.1 5 0 9-3.1 9-7s-4-7.2-9-7.2z",
     )
+
+    // 온보딩
+    val ChevronLeft = line("ChevronLeft", "M15 6l-6 6 6 6")
+    val ArrowUpRight = line("ArrowUpRight", "M7 17L17 7", "M9 7h8v8")
+    val Shield = line("Shield", "M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z", "M9 12l2 2 4-4")
+    val Heart = line("Heart", "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z")
+    val LocationOff = line(
+        "LocationOff",
+        "M12 21s-7-6.2-7-11.5a7 7 0 0 1 12-4.9", "M18.6 8.5c.3.3.4.7.4 1C19 14.8 12 21 12 21", "M3 3l18 18",
+    )
+    val Lock = line(
+        "Lock",
+        "M7 11h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z", "M8 11V8a4 4 0 0 1 8 0v3",
+    )
+    val Bell = line("Bell", "M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z", "M10 20a2 2 0 0 0 4 0")
+    val Clipboard = line("Clipboard", "M9 3h6v3H9z", "M8 5H6v16h12V5h-2", "M9 13l2 2 4-4")
+    val FileDoc = line("FileDoc", "M7 3h7l5 5v13H7z", "M14 3v5h5", "M10 15l2 2 3-4")
+    val Link = line(
+        "Link",
+        "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1", "M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+    )
+    val Close = line("Close", "M6 6l12 12", "M18 6L6 18")
+    val Calendar = line("Calendar", "M4 6h16v14H4z", "M4 10h16", "M8 3v4", "M16 3v4")
+    val Clock = line("Clock", "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7v5l3 2")
 }

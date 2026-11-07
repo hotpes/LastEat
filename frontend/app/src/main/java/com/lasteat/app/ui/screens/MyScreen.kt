@@ -41,10 +41,12 @@ fun MyScreen(
     onLocationClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onSavedClick: () -> Unit,
+    ownerMenuTitle: String,
     onOwnerClick: () -> Unit,
     onNoticeClick: () -> Unit,
     onFaqClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onResetOnboarding: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         LastEatTopBar(locationName, onLocationClick)
@@ -102,7 +104,7 @@ fun MyScreen(
         )
         TintedBanner(
             eyebrow = "사장님이신가요?",
-            title = "우리 식당 혜택 등록하기",
+            title = ownerMenuTitle,
             description = "$locationName 이웃에게 가게의 혜택을 알려보세요",
             icon = LastEatIcons.Store,
             onClick = onOwnerClick,
@@ -115,6 +117,8 @@ fun MyScreen(
         MenuRow(LastEatIcons.Megaphone, "공지사항", onClick = onNoticeClick)
         MenuRow(LastEatIcons.Help, "자주 묻는 질문 · 문의하기", onClick = onFaqClick)
         MenuRow(LastEatIcons.Settings, "앱 설정", onClick = onSettingsClick)
+        // 시연·테스트용: 처음 실행 화면(역할 선택)을 다시 봅니다. 출시 전 삭제하세요.
+        MenuRow(LastEatIcons.Refresh, "처음 화면 다시 보기", onClick = onResetOnboarding)
 
         Column(Modifier.padding(Spacing.Screen)) {
             Row {

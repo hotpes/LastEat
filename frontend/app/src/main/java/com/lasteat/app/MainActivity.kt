@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import com.lasteat.app.ui.LastEatApp
+import com.lasteat.app.ui.AppRoot
 import com.lasteat.app.ui.components.DefaultImageContent
 import com.lasteat.app.ui.components.LocalImageContent
 import com.lasteat.app.ui.theme.LastEatTheme
@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
                 // }
                 CompositionLocalProvider(LocalImageContent provides DefaultImageContent) {
                     Surface(Modifier.fillMaxSize()) {
-                        LastEatApp()
+                        AppRoot()
                     }
                 }
             }

@@ -9,11 +9,11 @@ import androidx.compose.ui.graphics.Color
  */
 object LastEatColors {
     // 브랜드 그린
-    val Green900 = Color(0xFF1E4D34) // 눌림 상태
-    val Green700 = Color(0xFF2A6B47) // 메인 버튼, 선택 칩, 로고 (primary)
+    val Green900 = Color(0xFF19563C) // 눌림 상태
+    val Green700 = Color(0xFF25744F) // 메인 버튼, 선택 칩, 로고 (primary)
     val Green500 = Color(0xFF3F8A5E) // 링크성 텍스트, 아이콘 강조
-    val Green100 = Color(0xFFE6F0E9) // 혜택 배너, 선택 탭 배경
-    val Green50 = Color(0xFFF2F7F3)  // 연한 카드 배경
+    val Green100 = Color(0xFFEAF3E8) // 혜택 배너, 선택 탭 배경
+    val Green50 = Color(0xFFF6F8F4)  // 연한 카드 배경
 
     // 중립
     val Gray900 = Color(0xFF1B1D1C) // 제목 텍스트
