@@ -1,7 +1,6 @@
-package com.lasteat.owner
+package com.lasteat.app.ui.owner
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -15,61 +14,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-@Composable internal fun RedeemPanel(couponState: CouponUiState, onAction: (OwnerAction) -> Unit, onDone: () -> Unit) {
-    var code by rememberSaveable { mutableStateOf("") }
-    var total by rememberSaveable { mutableStateOf("") }
-    var inputError by rememberSaveable { mutableStateOf<String?>(null) }
-    if (couponState is CouponUiState.Redeemed) {
-        Column(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(OwnerIcons.CheckCircle, null, Modifier.size(65.dp), tint = Forest)
-            Text(couponState.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 15.dp))
-            Text(couponState.message, modifier = Modifier.padding(top = 12.dp))
-        }
-        SaveButton("확인", onDone)
-        return
-    }
-    if (couponState !is CouponUiState.Ready) {
-        Text("손님이 보여주신 쿠폰 번호를 입력해 주세요.", color = Muted)
-        FormField("쿠폰 번호", code, { code = normalizeCode(it).filter(Char::isLetterOrDigit).take(32); inputError = null })
-    }
-    if (couponState !is CouponUiState.Ready) {
-        FormError((couponState as? CouponUiState.Rejected)?.message ?: inputError)
-        if (couponState is CouponUiState.Checking) {
-            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 16.dp))
-            Text("쿠폰 정보를 확인하고 있어요.", color = Muted)
-        } else SaveButton("쿠폰 확인") {
-            inputError = if (code.isBlank()) "쿠폰 번호를 입력해 주세요." else null
-            if (inputError == null) onAction(OwnerAction.CheckCoupon(code))
-        }
-        return
-    }
-    val coupon = couponState.coupon
-    TextButton(onClick = { onAction(OwnerAction.OpenCoupon) }) { Text("다른 쿠폰 확인") }
-    Column(Modifier.fillMaxWidth().padding(top = 16.dp).background(Sage, RoundedCornerShape(15.dp)).padding(17.dp)) {
-        Text("확인된 쿠폰", color = Forest, style = MaterialTheme.typography.titleSmall)
-        Text(coupon.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-        Text("${coupon.customerLabel} · ${coupon.maskedCode}", style = MaterialTheme.typography.bodySmall, color = Muted)
-        Text(coupon.conditionText, modifier = Modifier.padding(top = 8.dp))
-        Text("${coupon.scheduleText}\n${coupon.expiresText}", style = MaterialTheme.typography.bodySmall, color = Muted)
-    }
-    FormField("할인 전 주문 금액 (원)", total, { total = it.filter(Char::isDigit).take(8); inputError = null }, numeric = true)
-    val orderAmount = total.moneyValue()
-    val quote = couponState.quote?.takeIf { it.orderAmount == orderAmount }
-    if (couponState.quoteLoading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
-    else OutlinedButton(onClick = {
-        inputError = if (orderAmount == null) "주문 금액을 숫자로 입력해 주세요." else null
-        if (orderAmount != null) onAction(OwnerAction.QuoteCoupon(coupon.id, orderAmount))
-    }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp), enabled = !LocalOwnerSubmitting.current) { Text("할인 금액 확인") }
-    if (quote != null) {
-        Text("할인 ${quote.discountAmount.won()} · 결제 예정 ${quote.payableAmount.won()}", color = Forest, modifier = Modifier.padding(top = 12.dp))
-    }
-    FormError(couponState.error ?: inputError)
-    Button(onClick = { if (quote != null) onAction(OwnerAction.RedeemCoupon(coupon.id, quote.id)) }, enabled = quote?.canRedeem == true && !LocalOwnerSubmitting.current && !couponState.quoteLoading, modifier = Modifier.fillMaxWidth().padding(top = 20.dp).heightIn(min = 52.dp), shape = RoundedCornerShape(13.dp)) { Text("쿠폰 사용 완료 처리") }
-}
 
 @Composable internal fun StatusPanel(shop: Shop, onSelect: (BusinessStatus) -> Unit) {
     BusinessStatus.entries.forEach { status ->
@@ -120,26 +64,15 @@ import java.util.Locale
         }
     }
 }
-@Composable internal fun NoticePanel(state: OwnerState, onPublish: (String, String) -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var body by rememberSaveable { mutableStateOf("") }
-    var error by rememberSaveable { mutableStateOf<String?>(null) }
-    Text("신메뉴나 오늘의 소식을 손님에게 알려보세요.", color = Muted)
-    FormField("소식 제목", title, { title = it.take(50) })
-    FormField("소식 내용", body, { body = it.take(500) }, multiline = true)
-    FormError(error)
-    SaveButton("소식 등록") {
-        error = when { title.isBlank() -> "소식 제목을 입력해 주세요."; body.isBlank() -> "소식 내용을 입력해 주세요."; else -> null }
-        if (error == null) { onPublish(title, body) }
+@Composable internal fun NoticeListPanel(state: OwnerState, onNew: () -> Unit, onEdit: (String) -> Unit, onVisibility: (String, Boolean) -> Unit, onDelete: (String) -> Unit) {
+    Text("게시한 할인 안내를 수정하거나 공개 상태를 바꿀 수 있어요.", color = Muted)
+    SaveButton("+ 새 할인 공지") { onNew() }
+    if (state.notices.isEmpty()) {
+        Text("등록된 할인 공지가 없어요.", color = Muted, modifier = Modifier.padding(top = 20.dp))
     }
-    if (state.notices.isNotEmpty()) {
-        SectionTitle("등록한 소식")
-        state.notices.forEach { notice ->
-            Text(notice.title, style = MaterialTheme.typography.titleSmall)
-            Text(notice.body, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 7.dp))
-            Text(notice.date, style = MaterialTheme.typography.bodySmall, color = Muted)
-            HorizontalDivider(Modifier.padding(vertical = 12.dp), color = Line)
-        }
+    state.notices.forEach { notice ->
+        Spacer(Modifier.height(16.dp))
+        NoticeCard(notice, { onEdit(notice.id) }, { onVisibility(notice.id, !notice.isPublished) }, { onDelete(notice.id) })
     }
 }
 @Composable internal fun StatsPanel(state: OwnerState) {
@@ -157,7 +90,7 @@ import java.util.Locale
         }
     }
     HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Line)
-    listOf("오늘 가게 조회" to stats.viewsToday, "오늘 길찾기 클릭" to stats.directionsToday, "쿠폰 발급 누적" to stats.issuedTotal, "쿠폰 사용 누적" to stats.usedTotal, "쿠폰 사용률" to stats.useRate).forEach { (label, value) ->
+    listOf("오늘 가게 조회" to stats.viewsToday, "오늘 길찾기 클릭" to stats.directionsToday, "오늘 할인 공지 조회" to stats.noticeViewsToday, "게시된 공지 수" to stats.noticeCount).forEach { (label, value) ->
         Row(Modifier.fillMaxWidth().padding(vertical = 10.dp)) { Text(label, color = Muted, modifier = Modifier.weight(1f)); Text(value, fontWeight = FontWeight.Bold) }
     }
 }

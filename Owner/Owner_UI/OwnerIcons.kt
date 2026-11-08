@@ -1,4 +1,4 @@
-package com.lasteat.owner
+package com.lasteat.app.ui.owner
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -32,14 +32,6 @@ internal object OwnerIcons {
         moveTo(12f, 7f); lineTo(17f, 12f)
     }
     val Schedule = outline("Schedule") { circle(12f, 12f, 9f); moveTo(12f, 6f); verticalLineTo(12f); lineTo(16f, 14f) }
-    val QrCodeScanner = outline("QrCodeScanner") {
-        moveTo(3f, 8f); verticalLineTo(3f); horizontalLineTo(8f)
-        moveTo(16f, 3f); horizontalLineTo(21f); verticalLineTo(8f)
-        moveTo(21f, 16f); verticalLineTo(21f); horizontalLineTo(16f)
-        moveTo(8f, 21f); horizontalLineTo(3f); verticalLineTo(16f)
-        box(7f, 7f, 10f, 10f); box(14f, 7f, 17f, 10f); box(7f, 14f, 10f, 17f)
-        moveTo(14f, 14f); horizontalLineTo(17f); verticalLineTo(17f); horizontalLineTo(15f)
-    }
     val Storefront = outline("Storefront") {
         moveTo(3f, 9f); lineTo(5f, 3f); horizontalLineTo(19f); lineTo(21f, 9f)
         curveTo(21f, 13f, 16f, 13f, 16f, 9f); curveTo(16f, 13f, 12f, 13f, 12f, 9f)
@@ -51,12 +43,6 @@ internal object OwnerIcons {
         moveTo(4f, 3f); lineTo(20f, 21f); moveTo(3f, 7f); lineTo(7f, 3f)
         moveTo(5f, 9f); lineTo(9f, 5f); moveTo(4f, 21f); lineTo(20f, 3f)
         moveTo(20f, 3f); curveTo(15f, 3f, 12f, 8f, 15f, 9f)
-    }
-    val ConfirmationNumber = outline("Coupon") {
-        moveTo(3f, 5f); horizontalLineTo(21f); verticalLineTo(9f)
-        curveTo(17f, 9f, 17f, 15f, 21f, 15f); verticalLineTo(19f); horizontalLineTo(3f); verticalLineTo(15f)
-        curveTo(7f, 15f, 7f, 9f, 3f, 9f); close()
-        moveTo(14f, 8f); verticalLineTo(10f); moveTo(14f, 14f); verticalLineTo(16f)
     }
     val RateReview = outline("Review") {
         moveTo(13f, 4f); horizontalLineTo(3f); verticalLineTo(20f); lineTo(8f, 17f); horizontalLineTo(21f); verticalLineTo(12f)
@@ -79,8 +65,6 @@ internal object OwnerIcons {
         moveTo(3f, 4f); horizontalLineTo(21f); verticalLineTo(17f); horizontalLineTo(8f); lineTo(3f, 21f); close()
         moveTo(7f, 8f); horizontalLineTo(17f); moveTo(7f, 12f); horizontalLineTo(14f)
     }
-    val PlayArrow = outline("Play") { moveTo(7f, 4f); lineTo(20f, 12f); lineTo(7f, 20f); close() }
-    val Pause = outline("Pause") { box(6f, 4f, 9f, 20f); box(15f, 4f, 18f, 20f) }
     val Image = outline("Image") { box(3f, 3f, 21f, 21f); circle(8f, 8f, 1.5f); moveTo(3f, 17f); lineTo(10f, 11f); lineTo(15f, 16f); lineTo(18f, 13f); lineTo(21f, 16f) }
     val AddPhotoAlternate = outline("AddPhoto") {
         moveTo(13f, 3f); horizontalLineTo(3f); verticalLineTo(21f); horizontalLineTo(21f); verticalLineTo(11f)
@@ -93,7 +77,6 @@ internal object OwnerIcons {
         moveTo(7f, 14f); horizontalLineTo(9f); moveTo(14f, 14f); horizontalLineTo(16f)
         moveTo(7f, 18f); horizontalLineTo(9f); moveTo(14f, 18f); horizontalLineTo(16f)
     }
-    val CheckCircle = outline("CheckCircle") { circle(12f, 12f, 9f); moveTo(7f, 12f); lineTo(11f, 16f); lineTo(17f, 9f) }
 }
 
 private fun outline(name: String, mirrored: Boolean = false, draw: PathBuilder.() -> Unit): ImageVector =

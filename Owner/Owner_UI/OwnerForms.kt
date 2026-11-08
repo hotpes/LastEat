@@ -1,4 +1,4 @@
-package com.lasteat.owner
+package com.lasteat.app.ui.owner
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -18,9 +18,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 internal val LocalOwnerSubmitting = staticCompositionLocalOf { false }
 
@@ -137,54 +134,25 @@ internal val LocalOwnerSubmitting = staticCompositionLocalOf { false }
     if (menu != null) TextButton(onClick = { deleting = true }, modifier = Modifier.fillMaxWidth().padding(top = 5.dp)) { Text("이 메뉴 삭제", color = MaterialTheme.colorScheme.error) }
     if (deleting) AlertDialog(onDismissRequest = { deleting = false }, title = { Text("메뉴를 삭제할까요?") }, text = { Text("${menu?.name} 메뉴가 손님 화면에서 사라집니다.") }, confirmButton = { TextButton(onClick = { deleting = false; onDelete() }) { Text("삭제") } }, dismissButton = { TextButton(onClick = { deleting = false }) { Text("취소") } })
 }
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable internal fun BenefitForm(offer: Offer?, onSave: (Offer) -> Unit) {
-    val original = offer?.terms
-    var kind by rememberSaveable(offer?.id) { mutableStateOf(original?.kind ?: BenefitKind.PERCENT) }
-    var percent by rememberSaveable(offer?.id) { mutableStateOf(original?.percent?.toString().orEmpty()) }
-    var amount by rememberSaveable(offer?.id) { mutableStateOf(original?.amount?.toString().orEmpty()) }
-    var freeItem by rememberSaveable(offer?.id) { mutableStateOf(original?.freeItem.orEmpty()) }
-    var minimum by rememberSaveable(offer?.id) { mutableStateOf(original?.minimum?.toString().orEmpty()) }
-    var maximum by rememberSaveable(offer?.id) { mutableStateOf(original?.maximum?.toString().orEmpty()) }
-    var quantity by rememberSaveable(offer?.id) { mutableStateOf(offer?.quantity?.toString().orEmpty()) }
-    var expires by rememberSaveable(offer?.id) { mutableStateOf(original?.expires.orEmpty()) }
-    var days by rememberSaveable(offer?.id) { mutableStateOf(original?.days?.toList().orEmpty()) }
-    var starts by rememberSaveable(offer?.id) { mutableStateOf(original?.starts.orEmpty()) }
-    var ends by rememberSaveable(offer?.id) { mutableStateOf(original?.ends.orEmpty()) }
-    var showDate by rememberSaveable { mutableStateOf(false) }
-    var error by rememberSaveable { mutableStateOf<String?>(null) }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { BenefitKind.entries.forEach { type -> FilterChip(selected = kind == type, onClick = { kind = type }, label = { Text(type.label) }) } }
-    when (kind) {
-        BenefitKind.PERCENT -> FormField("할인율 (%)", percent, { percent = it.filter(Char::isDigit).take(3) }, numeric = true, placeholder = "예: 10")
-        BenefitKind.FIXED -> FormField("할인 금액 (원)", amount, { amount = it.filter(Char::isDigit).take(8) }, numeric = true, placeholder = "예: 3000")
-        BenefitKind.FREE_ITEM -> FormField("무료로 제공할 메뉴", freeItem, { freeItem = it.take(35) }, placeholder = "제공할 메뉴를 입력해 주세요")
-    }
-    FormField("최소 주문 금액 (원)", minimum, { minimum = it.filter(Char::isDigit).take(8) }, numeric = true, helper = "제한이 없으면 0을 입력해 주세요.", placeholder = "예: 20000")
-    if (kind == BenefitKind.PERCENT) FormField("최대 할인 금액 (원)", maximum, { maximum = it.filter(Char::isDigit).take(8) }, numeric = true, helper = "할인 한도가 없으면 0을 입력해 주세요.", placeholder = "예: 5000")
-    FormField("총 발급 수량 (장)", quantity, { quantity = it.filter(Char::isDigit).take(5) }, numeric = true, placeholder = "예: 100")
-    OutlinedTextField(value = expires, onValueChange = { expires = it.filter { char -> char.isDigit() || char == '-' }.take(10) }, label = { Text("쿠폰 사용 종료일") }, placeholder = { Text("YYYY-MM-DD", color = Muted) }, singleLine = true, modifier = Modifier.testTag("ownerField:쿠폰 사용 종료일").fillMaxWidth().padding(top = 10.dp), shape = RoundedCornerShape(12.dp), trailingIcon = { IconButton(onClick = { showDate = true }) { Icon(OwnerIcons.CalendarMonth, "혜택 종료일 선택") } })
-    DayPicker("사용 가능한 요일", days.toSet()) { days = it.sorted() }
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.weight(1f)) { FormField("사용 시작 시간", starts, { starts = it.take(5) }, placeholder = "예: 00:00") }
-        Box(Modifier.weight(1f)) { FormField("사용 종료 시간", ends, { ends = it.take(5) }, placeholder = "예: 23:59") }
-    }
-    Text("하루 종일 사용: 00:00–23:59", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(top = 6.dp))
+
+@Composable internal fun NoticeForm(notice: Notice?, onSave: (NoticeDraft) -> Unit) {
+    var headline by rememberSaveable(notice?.id) { mutableStateOf(notice?.headline.orEmpty()) }
+    var condition by rememberSaveable(notice?.id) { mutableStateOf(notice?.condition.orEmpty()) }
+    var period by rememberSaveable(notice?.id) { mutableStateOf(notice?.periodText.orEmpty()) }
+    var error by rememberSaveable(notice?.id) { mutableStateOf<String?>(null) }
+    Text("할인 내용과 이용 조건을 공지로 알려주세요.", color = Muted)
+    FormField("공지 제목", headline, { headline = it.take(60) }, placeholder = "할인 안내 제목을 입력해 주세요")
+    FormField("할인 내용 · 이용 조건", condition, { condition = it.take(1000) }, multiline = true, placeholder = "손님에게 안내할 할인 정보와 이용 조건을 입력해 주세요")
+    FormField("안내 기간", period, { period = it.take(100) }, placeholder = "기간 또는 상시 안내 여부를 입력해 주세요")
+    Text("입력한 제목·내용·기간이 손님 화면의 할인 안내 카드에 표시됩니다.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 12.dp))
     FormError(error)
-    SaveButton(if (offer == null) "혜택 만들기" else "혜택 수정 저장") {
-        val terms = BenefitTerms(
-            percent = if (kind == BenefitKind.PERCENT) percent.toIntOrNull() ?: -1 else 0,
-            minimum = minimum.moneyValue() ?: -1,
-            maximum = if (kind == BenefitKind.PERCENT) maximum.moneyValue() ?: -1 else 0,
-            expires = expires, kind = kind,
-            amount = if (kind == BenefitKind.FIXED) amount.moneyValue() ?: -1 else 0,
-            freeItem = freeItem.trim(), days = days.toSet(), starts = starts, ends = ends,
-        )
-        val count = quantity.toIntOrNull()
-        error = validateBenefitInput(terms) ?: if (count == null) "발급 수량을 숫자로 입력해 주세요." else null
-        if (error == null) onSave(Offer(offer?.id ?: "", terms.headline(), terms, count!!, offer?.issued ?: 0, offer?.used ?: 0, offer?.paused ?: false))
-    }
-    if (showDate) {
-        val dateState = rememberDatePickerState(initialSelectedDateMillis = runCatching { LocalDate.parse(expires).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }.getOrNull())
-        DatePickerDialog(onDismissRequest = { showDate = false }, confirmButton = { TextButton(onClick = { dateState.selectedDateMillis?.let { expires = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString() }; showDate = false }, enabled = dateState.selectedDateMillis != null) { Text("선택") } }, dismissButton = { TextButton(onClick = { showDate = false }) { Text("취소") } }) { DatePicker(dateState) }
+    SaveButton(if (notice == null) "공지 게시" else "변경 내용 저장") {
+        error = when {
+            headline.isBlank() -> "공지 제목을 입력해 주세요."
+            condition.isBlank() -> "할인 내용과 이용 조건을 입력해 주세요."
+            period.isBlank() -> "안내 기간을 입력해 주세요."
+            else -> null
+        }
+        if (error == null) onSave(NoticeDraft(headline.trim(), condition.trim(), period.trim()))
     }
 }
