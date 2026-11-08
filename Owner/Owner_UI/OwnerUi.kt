@@ -1,4 +1,4 @@
-package com.lasteat.owner
+package com.lasteat.app.ui.owner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,40 +22,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-internal val Forest = Color(0xFF25744F)
-internal val DeepForest = Color(0xFF19563C)
-internal val Sage = Color(0xFFEAF3E8)
-internal val Ink = Color(0xFF26332D)
-internal val Muted = Color(0xFF78847B)
-internal val CanvasColor = Color(0xFFF6F8F4)
-internal val Line = Color(0xFFE5EAE3)
-internal val Amber = Color(0xFFBF8535)
-
-@Composable internal fun OwnerTheme(content: @Composable () -> Unit) {
-    val base = MaterialTheme.typography // Keep every font family supplied by the main app.
-    MaterialTheme(
-        colorScheme = lightColorScheme(primary = Forest, onPrimary = Color.White, primaryContainer = Sage, onPrimaryContainer = DeepForest, secondary = Forest, secondaryContainer = Sage, onSecondaryContainer = DeepForest, tertiary = Forest, tertiaryContainer = Sage, onTertiaryContainer = DeepForest, background = CanvasColor, onBackground = Ink, surface = Color.White, onSurface = Ink, surfaceVariant = Sage, onSurfaceVariant = Muted, surfaceContainerLowest = Color.White, surfaceContainerLow = CanvasColor, surfaceContainer = CanvasColor, surfaceContainerHigh = Sage, surfaceContainerHighest = Sage, surfaceTint = Forest, outline = Line, error = Color(0xFFAC433E)),
-        typography = base.copy(
-            headlineSmall = base.headlineSmall.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold, lineHeight = 35.sp),
-            titleLarge = base.titleLarge.copy(fontSize = 21.sp, fontWeight = FontWeight.Bold),
-            titleMedium = base.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-            titleSmall = base.titleSmall.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
-            bodyLarge = base.bodyLarge.copy(fontSize = 14.sp, lineHeight = 22.sp),
-            bodyMedium = base.bodyMedium.copy(fontSize = 13.sp, lineHeight = 21.sp),
-            bodySmall = base.bodySmall.copy(fontSize = 11.sp, lineHeight = 18.sp),
-            labelLarge = base.labelLarge.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
-            labelMedium = base.labelMedium.copy(fontSize = 12.sp),
-            labelSmall = base.labelSmall.copy(fontSize = 11.sp),
-        ),
-        shapes = Shapes(small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(20.dp)),
-        content = content,
-    )
-}
-
-enum class OwnerPanel { NONE, REDEEM, SHOP, MENUS, HOURS, BENEFIT, REVIEWS, STATS, NOTICES, ALERTS, STATUS }
+// Read colors and typography from the main app's LastEatTheme.
+internal val Forest: Color @Composable get() = MaterialTheme.colorScheme.primary
+internal val DeepForest: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
+internal val Sage: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
+internal val Ink: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+internal val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+internal val CanvasColor: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+internal val Line: Color @Composable get() = MaterialTheme.colorScheme.outlineVariant
+internal val Amber = Color(0xFFE5A21A)
+@Composable internal fun OwnerTheme(content: @Composable () -> Unit) { content() }
+enum class OwnerPanel { NONE, SHOP, MENUS, HOURS, NOTICE_EDITOR, NOTICES, REVIEWS, STATS, ALERTS, STATUS }
 
 @Composable internal fun WhiteCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.clip(RoundedCornerShape(18.dp)).background(Color.White).border(1.dp, Line, RoundedCornerShape(18.dp)).padding(17.dp), content = content)
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).border(1.dp, Line, RoundedCornerShape(18.dp)).padding(17.dp), content = content)
 }
 @Composable internal fun Badge(text: String, color: Color = Forest, background: Color = Sage) {
     Text(text, style = MaterialTheme.typography.labelSmall, color = color, modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(background).padding(horizontal = 8.dp, vertical = 4.dp))
@@ -96,7 +76,7 @@ internal val LocalOwnerPickImage = staticCompositionLocalOf<OwnerPickImage?> { n
     }
 }
 
-@Composable fun OwnerPage(state: OwnerState, onAction: (OwnerPanel) -> Unit, onOffer: (String) -> Unit, onPause: (String) -> Unit, modifier: Modifier = Modifier) {
+@Composable fun OwnerPage(state: OwnerState, onAction: (OwnerPanel) -> Unit, onNewNotice: () -> Unit, onNoticeEdit: (String) -> Unit, onNoticeVisibility: (String, Boolean) -> Unit, onNoticeDelete: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().widthIn(max = 560.dp).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 20.dp, bottom = 26.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
@@ -132,12 +112,12 @@ internal val LocalOwnerPickImage = staticCompositionLocalOf<OwnerPickImage?> { n
             }
         }
         Spacer(Modifier.height(14.dp))
-        Surface(onClick = { onAction(OwnerPanel.REDEEM) }, color = Forest, shape = RoundedCornerShape(17.dp), modifier = Modifier.fillMaxWidth()) {
+        Surface(onClick = onNewNotice, color = Forest, shape = RoundedCornerShape(17.dp), modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .14f)), contentAlignment = Alignment.Center) { Icon(OwnerIcons.QrCodeScanner, null, Modifier.size(25.dp), tint = Color.White) }
+                Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .14f)), contentAlignment = Alignment.Center) { Icon(OwnerIcons.Campaign, null, Modifier.size(25.dp), tint = Color.White) }
                 Column(Modifier.weight(1f).padding(start = 13.dp)) {
-                    Text("손님이 쿠폰을 가져오셨나요?", style = MaterialTheme.typography.bodySmall, color = Color(0xFFD4E8DB))
-                    Text("쿠폰 확인·사용 처리", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                    Text("우리 가게의 할인 소식을 알려보세요", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .85f))
+                    Text("할인 공지 등록", style = MaterialTheme.typography.titleMedium, color = Color.White)
                 }
                 Icon(OwnerIcons.ChevronRight, null, Modifier.size(23.dp), tint = Color.White)
             }
@@ -145,7 +125,7 @@ internal val LocalOwnerPickImage = staticCompositionLocalOf<OwnerPickImage?> { n
         SectionTitle("가게 관리")
         val actions = listOf(
             Triple("가게 정보", OwnerIcons.Storefront, OwnerPanel.SHOP), Triple("메뉴 관리", OwnerIcons.RestaurantMenu, OwnerPanel.MENUS), Triple("영업시간", OwnerIcons.Schedule, OwnerPanel.HOURS),
-            Triple("혜택 만들기", OwnerIcons.ConfirmationNumber, OwnerPanel.BENEFIT), Triple("리뷰 관리", OwnerIcons.RateReview, OwnerPanel.REVIEWS), Triple("가게 소식", OwnerIcons.Campaign, OwnerPanel.NOTICES),
+            Triple("공지 관리", OwnerIcons.Campaign, OwnerPanel.NOTICES), Triple("리뷰 관리", OwnerIcons.RateReview, OwnerPanel.REVIEWS), Triple("통계 보기", OwnerIcons.Visibility, OwnerPanel.STATS),
         )
         actions.chunked(3).forEachIndexed { index, row ->
             if (index > 0) Spacer(Modifier.height(10.dp))
@@ -168,17 +148,19 @@ internal val LocalOwnerPickImage = staticCompositionLocalOf<OwnerPickImage?> { n
                 Box(Modifier.width(1.dp).height(60.dp).background(Line))
                 Metric("길찾기 클릭", state.stats.directionsToday, OwnerIcons.NearMe, Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(60.dp).background(Line))
-                Metric("쿠폰 사용 누적", state.stats.usedTotal, OwnerIcons.ConfirmationNumber, Modifier.weight(1f))
+                Metric("할인 공지 조회", state.stats.noticeViewsToday, OwnerIcons.Campaign, Modifier.weight(1f))
             }
             Spacer(Modifier.height(13.dp))
             Text("가게를 찾은 손님과 혜택 반응을 확인해요", color = Muted, style = MaterialTheme.typography.bodySmall)
         }
-        SectionTitle("우리 가게 혜택", "+ 만들기") { onAction(OwnerPanel.BENEFIT) }
-        state.offers.forEachIndexed { index, offer ->
-            if (index > 0) Spacer(Modifier.height(12.dp))
-            OfferCard(offer, onEdit = { onOffer(offer.id) }, onPause = { onPause(offer.id) })
-        }
-        if (state.offers.isEmpty()) Text("첫 혜택을 만들어 주변 손님에게 가게를 알려보세요.", color = Muted)
+        SectionTitle("우리 가게 할인 공지", "전체 보기") { onAction(OwnerPanel.NOTICES) }
+        val notice = state.notices.firstOrNull { it.isPublished } ?: state.notices.firstOrNull()
+        if (notice == null) {
+            WhiteCard {
+                Text("등록된 할인 공지가 없어요.", color = Muted)
+                TextButton(onClick = onNewNotice) { Text("첫 할인 공지 등록하기"); Icon(OwnerIcons.ChevronRight, null) }
+            }
+        } else NoticeCard(notice, { onNoticeEdit(notice.id) }, { onNoticeVisibility(notice.id, !notice.isPublished) }, { onNoticeDelete(notice.id) })
         val pending = state.reviewSummary.pending
         SectionTitle("손님이 남긴 이야기", "전체 ${state.reviewSummary.total}") { onAction(OwnerPanel.REVIEWS) }
         WhiteCard {
@@ -210,24 +192,26 @@ internal val LocalOwnerPickImage = staticCompositionLocalOf<OwnerPickImage?> { n
         Text(value, style = MaterialTheme.typography.titleLarge, fontSize = 25.sp, modifier = Modifier.padding(top = 4.dp))
     }
 }
-@Composable internal fun OfferCard(offer: Offer, onEdit: () -> Unit, onPause: () -> Unit) {
+@Composable internal fun NoticeCard(notice: Notice, onEdit: () -> Unit, onVisibility: () -> Unit, onDelete: () -> Unit) {
+    var deleting by remember { mutableStateOf(false) }
+    val enabled = notice.canManage && !LocalOwnerSubmitting.current
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Sage).padding(17.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(OwnerIcons.ConfirmationNumber, null, Modifier.size(18.dp), tint = Forest)
-            Text("  ${offer.statusText}", style = MaterialTheme.typography.labelSmall, color = Forest, modifier = Modifier.weight(1f))
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(OwnerIcons.Edit, "혜택 수정: ${offer.title}", Modifier.size(18.dp), tint = Forest) }
+            Icon(OwnerIcons.Campaign, null, Modifier.size(18.dp), tint = Forest)
+            Text(if (notice.isPublished) "  게시 중" else "  비공개", style = MaterialTheme.typography.labelSmall, color = Forest, modifier = Modifier.weight(1f))
+            if (notice.canManage) IconButton(onClick = onEdit, enabled = enabled) { Icon(OwnerIcons.Edit, "공지 수정: ${notice.headline}", Modifier.size(18.dp), tint = Forest) }
         }
-        Text(offer.title, style = MaterialTheme.typography.titleLarge, color = DeepForest, modifier = Modifier.padding(top = 6.dp), maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(offer.terms.description(), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
-        Text(offer.terms.scheduleLabel(), color = Muted, style = MaterialTheme.typography.bodySmall)
-        Text("${offer.terms.expires.replace('-', '.')}까지", color = Forest, style = MaterialTheme.typography.bodySmall)
-        HorizontalDivider(Modifier.padding(vertical = 13.dp), color = Forest.copy(alpha = .12f))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("발급 ${offer.issued}  ·  사용 ${offer.used}", style = MaterialTheme.typography.labelMedium, color = DeepForest, modifier = Modifier.weight(1f))
-            TextButton(onClick = onPause, enabled = offer.canToggleIssuance && !LocalOwnerSubmitting.current, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.heightIn(min = 44.dp)) {
-                Icon(if (offer.paused) OwnerIcons.PlayArrow else OwnerIcons.Pause, null, Modifier.size(15.dp))
-                Text(if (offer.paused) "발급 재개" else "발급 중지", style = MaterialTheme.typography.labelMedium)
+        Text(notice.headline, style = MaterialTheme.typography.titleLarge, color = DeepForest)
+        Text(notice.condition, color = Ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+        Text("안내 기간  ${notice.periodText}", color = Forest, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+        if (notice.publishedAt.isNotBlank()) Text(notice.publishedAt, color = Muted, style = MaterialTheme.typography.bodySmall)
+        if (notice.canManage) {
+            HorizontalDivider(Modifier.padding(vertical = 10.dp), color = Line)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TextButton(onClick = onVisibility, enabled = enabled) { Text(if (notice.isPublished) "비공개로 전환" else "공지 공개") }
+                TextButton(onClick = { deleting = true }, enabled = enabled) { Text("삭제", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
+    if (deleting) AlertDialog(onDismissRequest = { deleting = false }, title = { Text("공지를 삭제할까요?") }, text = { Text(notice.headline) }, confirmButton = { TextButton(onClick = { deleting = false; onDelete() }, enabled = enabled) { Text("삭제") } }, dismissButton = { TextButton(onClick = { deleting = false }) { Text("취소") } })
 }
