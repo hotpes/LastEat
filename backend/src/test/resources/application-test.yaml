@@ -1,4 +1,16 @@
+# 테스트도 운영과 같이 Flyway로 스키마를 만들고 ddl-auto: validate로 엔티티와 맞는지 검사한다.
+# 마이그레이션과 엔티티가 어긋나면 컨텍스트 로딩에서 실패한다.
 spring:
   jpa:
-    hibernate:
-      ddl-auto: create-drop
+    show-sql: false
+
+jwt:
+  secret: test-only-secret-at-least-32-bytes-long
+
+kakao:
+  app-id: 1234
+
+# 주기 작업(마감할인 자동 마감)은 테스트에서 직접 호출한다
+lasteat:
+  scheduler:
+    enabled: false

@@ -6,4 +6,22 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: none
+      # 스키마는 Flyway(db/migration)가 만든다. Hibernate는 엔티티와 맞는지 검사만 한다.
+      ddl-auto: validate
+  jackson:
+    time-zone: Asia/Seoul
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# 토큰 유효 기간 (API 명세: accessToken 1시간, refreshToken 14일). secret은 프로필별 설정 또는 환경 변수로 넣는다.
+jwt:
+  access-token-ttl: 1h
+  refresh-token-ttl: 14d
+
+kakao:
+  base-url: https://kapi.kakao.com
+  timeout: 3s

@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -48,6 +49,10 @@ public class Reservation extends BaseTimeEntity {
 	private ReservationStatus status;
 
 	private LocalDateTime pickedUpAt;
+
+	// 취소·수령·노쇼가 동시에 들어와도 하나만 반영되도록 낙관적 락
+	@Version
+	private Long version;
 
 	@Builder
 	private Reservation(Member member, ClosingDeal closingDeal, int quantity) {

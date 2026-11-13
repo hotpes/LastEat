@@ -1,0 +1,166 @@
+# 서버(backend/, deploy/) 테스트, 운영 이미지 빌드, main이면 GHCR에 이미지 업로드 후 서버에 배포. 해당 폴더가 바뀐 경우에만 돈다
+name: backend-ci
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/backend-ci.yml'
+  # 서버를 처음 만든 뒤 등, 코드 변경 없이 배포만 다시 할 때
+  workflow_dispatch:
+
+# 같은 브랜치에 새 커밋이 오면 이전 실행은 취소한다
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/hotpes/lasteat-backend
+  # 오라클 Ampere(ARM) 서버용 arm64와, 일반 PC·x86 서버용 amd64를 같이 만든다
+  PLATFORMS: linux/amd64,linux/arm64
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Gradle 의존성·빌드 캐시. 두 번째 실행부터 빨라진다
+      - uses: gradle/actions/setup-gradle@v6
+
+      # ubuntu 러너에는 Docker가 있어서 Testcontainers(MySQL) 통합 테스트도 실제로 돈다
+      - name: Test
+        run: ./gradlew test
+
+      # Docker가 없으면 통합 테스트가 조용히 건너뛰므로, 건너뛴 테스트가 있으면 실패시킨다
+      - name: Check skipped tests
+        run: |
+          total=$(cat build/test-results/test/*.xml | grep -o 'tests="[0-9]*"' | grep -o '[0-9]*' | paste -sd+ | bc)
+          skipped=$(cat build/test-results/test/*.xml | grep -o 'skipped="[0-9]*"' | grep -o '[0-9]*' | paste -sd+ | bc)
+          echo "테스트 ${total}개, 건너뜀 ${skipped}개" | tee -a "$GITHUB_STEP_SUMMARY"
+          test "$skipped" -eq 0
+
+      # 실패하면 Actions 실행 화면의 Artifacts에서 HTML 리포트를 받아 볼 수 있다
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-report
+          path: backend/build/reports/tests/test
+          retention-days: 7
+
+  # 운영 이미지가 두 CPU용으로 빌드되고 compose 설정이 올바른지 확인한다 (테스트는 위 job이 한다)
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check compose config
+        working-directory: deploy
+        run: |
+          export DOMAIN=example.com DB_PASSWORD=ci DB_ROOT_PASSWORD=ci JWT_SECRET=ci KAKAO_APP_ID=1
+          docker compose config --quiet
+          docker compose -f compose.yaml -f compose.local.yaml config --quiet
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      # 빌드 캐시를 GitHub에 두어 아래 publish job이 다시 빌드하지 않고 재사용한다
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          platforms: ${{ env.PLATFORMS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # main에 들어간 코드만 GHCR에 올린다. 서버는 이 이미지를 받아서 실행한다 (서버에서는 빌드하지 않음)
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [test, docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # latest와 커밋별 태그(sha-xxxxxxx). 문제가 생기면 이전 sha 태그로 되돌린다
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: backend
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+
+  # publish가 끝나면 서버에서 deploy/deploy.sh를 돌려 새 이미지·설정으로 다시 띄운다
+  # 저장소 Variables에 DEPLOY_HOST·DEPLOY_DOMAIN이 있을 때만 돈다 (서버를 만들기 전에는 건너뜀)
+  # SSH 키는 서버 authorized_keys에서 deploy.sh만 실행하도록 묶여 있다(command=, restrict). docs/DEPLOY.md 참고
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_HOST != ''
+    needs: [publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://${{ vars.DEPLOY_DOMAIN }}/swagger-ui/index.html
+    # 배포는 겹치지 않게 하나씩. 진행 중인 배포는 취소하지 않는다
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "ubuntu@${HOST}"
+
+      - name: Check health
+        run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.DEPLOY_DOMAIN }}/actuator/health"

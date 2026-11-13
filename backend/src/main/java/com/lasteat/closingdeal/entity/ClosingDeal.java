@@ -74,6 +74,9 @@ public class ClosingDeal extends BaseTimeEntity {
 		if (stock < 0) {
 			throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
 		}
+		if (openAt == null || pickupEndAt == null || !pickupEndAt.isAfter(openAt)) {
+			throw new IllegalArgumentException("수령 마감은 노출 시작보다 늦어야 합니다.");
+		}
 		this.store = store;
 		this.menu = menu;
 		this.originalPrice = originalPrice;
@@ -102,6 +105,50 @@ public class ClosingDeal extends BaseTimeEntity {
 		if (status == ClosingDealStatus.SOLD_OUT) {
 			status = ClosingDealStatus.OPEN;
 		}
+	}
+
+	// 화면에 보여 줄 상태. 저장된 status는 조기 마감(CLOSED) 여부만 믿고, 나머지는 시각과 재고로 계산한다.
+	// 그래서 상태 전환 스케줄러가 늦어도 조회·예약 결과는 같다.
+	public ClosingDealStatus statusAt(LocalDateTime now) {
+		if (status == ClosingDealStatus.CLOSED || !now.isBefore(pickupEndAt)) {
+			return ClosingDealStatus.CLOSED;
+		}
+		if (now.isBefore(openAt)) {
+			return ClosingDealStatus.SCHEDULED;
+		}
+		return stock == 0 ? ClosingDealStatus.SOLD_OUT : ClosingDealStatus.OPEN;
+	}
+
+	// 손님에게 보이는지: 예약 가능 또는 품절
+	public boolean isVisibleAt(LocalDateTime now) {
+		ClosingDealStatus current = statusAt(now);
+		return current == ClosingDealStatus.OPEN || current == ClosingDealStatus.SOLD_OUT;
+	}
+
+	// 사장님 조기 마감 또는 수령 마감 지남. 이미 받은 예약은 그대로 둔다
+	public void close() {
+		this.status = ClosingDealStatus.CLOSED;
+	}
+
+	// 사장님이 남은 재고를 직접 고친다. 0이면 품절, 품절에서 늘리면 다시 예약 가능
+	public void changeStock(int stock) {
+		if (stock < 0) {
+			throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
+		}
+		if (status == ClosingDealStatus.CLOSED) {
+			throw new IllegalStateException("마감된 마감할인의 재고는 바꿀 수 없습니다.");
+		}
+		this.stock = stock;
+		if (stock == 0) {
+			status = ClosingDealStatus.SOLD_OUT;
+		} else if (status == ClosingDealStatus.SOLD_OUT) {
+			status = ClosingDealStatus.OPEN;
+		}
+	}
+
+	// 할인율(%) 내림. 정가가 0이면 0
+	public int discountRate() {
+		return originalPrice == 0 ? 0 : (originalPrice - salePrice) * 100 / originalPrice;
 	}
 
 	private static void validateMenuOfStore(Store store, Menu menu) {
