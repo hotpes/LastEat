@@ -25,7 +25,7 @@ class OwnerReadException(
 ) : IOException(message, cause)
 
 /**
- * Read-only adapter for the owner GET endpoints in LastEat API v0.2.
+ * Read-only adapter for the owner GET endpoints in LastEat API v0.3.
  * Pass the host app's server URL and authenticated owner access token.
  * The host app must declare android.permission.INTERNET.
  */
@@ -73,9 +73,10 @@ class OwnerReadApi(baseUrl: String) {
                     Notice(
                         id = benefit.getLong("id").toString(),
                         headline = benefit.getString("title"),
-                        condition = benefit.stringOrEmpty("summary"),
-                        periodText = benefit.getString("startDate") + " ~ " + benefit.getString("endDate"),
-                        isPublished = benefit.getBoolean("visible"),
+                        condition = benefit.getString("content"),
+                        periodText = benefit.getString("periodText"),
+                        isPublished = benefit.getBoolean("published"),
+                        publishedAt = benefit.stringOrEmpty("publishedAt"),
                     )
                 }
                 OwnerState(shop = shop, menus = menus, notices = notices)
