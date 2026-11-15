@@ -1,10 +1,18 @@
 # application-local.yaml 로 복사해서 사용 (gitignore 대상)
+# 스키마는 Flyway가 만든다. ddl-auto: update로 만든 예전 로컬 DB가 있으면 지우고 빈 DB로 시작한다:
+#   DROP DATABASE lasteat; CREATE DATABASE lasteat;
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/lasteat?serverTimezone=Asia/Seoul
+    url: jdbc:mysql://localhost:3306/lasteat?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
     password:
   jpa:
-    hibernate:
-      ddl-auto: update
     show-sql: true
+
+# 로컬용 값. 운영 secret과 같은 값을 쓰지 않는다.
+jwt:
+  secret: local-only-secret-change-me-at-least-32-bytes
+
+# 카카오 개발자 콘솔 > 내 애플리케이션 > 앱 ID
+kakao:
+  app-id: 0

@@ -37,11 +37,15 @@ public class Menu extends BaseTimeEntity {
 	@Column(nullable = false)
 	private int price;
 
+	@Column(length = 500)
 	private String imageUrl;
 
 	// 대표 메뉴 여부
 	@Column(nullable = false)
 	private boolean signature;
+
+	@Column(nullable = false)
+	private boolean soldOut;
 
 	@Builder
 	private Menu(Store store, String name, String description, int price, String imageUrl, boolean signature) {
@@ -51,6 +55,10 @@ public class Menu extends BaseTimeEntity {
 		this.price = price;
 		this.imageUrl = imageUrl;
 		this.signature = signature;
+	}
+
+	public void changeSoldOut(boolean soldOut) {
+		this.soldOut = soldOut;
 	}
 
 }

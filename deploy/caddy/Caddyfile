@@ -1,0 +1,16 @@
+# DOMAIN은 deploy/.env에서 온다. 실제 도메인이면 Let's Encrypt 인증서를 자동으로 받고,
+# localhost면 Caddy 자체 인증서를 쓴다(로컬 확인용)
+# 이 폴더(deploy/caddy)를 통째로 /etc/caddy에 마운트한다. 파일 하나만 마운트하면 git pull 뒤에도 예전 내용이 보이기 때문
+{$DOMAIN} {
+	encode gzip
+
+	# API, API 문서(Swagger), 헬스 체크만 앱으로 넘긴다. 나머지 경로는 밖에 열지 않는다
+	@app path /api/* /swagger-ui/* /swagger-ui.html /v3/api-docs /v3/api-docs/* /actuator/health
+	handle @app {
+		reverse_proxy app:8080
+	}
+
+	handle {
+		respond 404
+	}
+}

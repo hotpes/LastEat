@@ -1,0 +1,23 @@
+# 운영 서버용. 접속 정보는 환경 변수로 주입한다.
+# 예: DB_URL=jdbc:mysql://{host}:3306/lasteat?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  flyway:
+    # 운영 DB에서 clean(전체 삭제) 명령이 실행되지 않게 막는다
+    clean-disabled: true
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+# JWT_SECRET: 32바이트 이상 임의 문자열 (예: openssl rand -base64 48)
+# KAKAO_APP_ID: 카카오 개발자 콘솔 > 내 애플리케이션 > 앱 ID
+jwt:
+  secret: ${JWT_SECRET}
+
+kakao:
+  app-id: ${KAKAO_APP_ID}

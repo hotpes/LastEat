@@ -1,0 +1,172 @@
+// LastEat ERD 원본. dbdiagram.io에 붙여 넣어 docs/erd.png를 만든다.
+// 기준: backend/src/main/resources/db/migration/V1__init.sql. 스키마를 바꾸면 이 파일도 같이 고친다.
+
+Project LastEat {
+  database_type: 'MySQL'
+  Note: 'API 명세 v0.2 기준 (2026-11-03). 결제 없음(현장 결제), 쿠폰·리뷰 없음'
+}
+
+Table member [headercolor: #3498DB] {
+  id bigint [pk, increment]
+  provider varchar(20) [not null, note: 'KAKAO']
+  provider_id varchar(255) [not null, note: '소셜 측 사용자 식별자']
+  email varchar(255) [note: '카카오 동의 항목에 따라 없을 수 있음']
+  nickname varchar(30) [not null]
+  role varchar(20) [not null, note: 'CONSUMER | OWNER']
+  fcm_token varchar(255)
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+
+  indexes {
+    (provider, provider_id) [unique, name: 'uk_member_provider']
+  }
+}
+
+Table refresh_token [headercolor: #3498DB] {
+  id bigint [pk, increment]
+  member_id bigint [not null, note: '로그인한 기기마다 1개']
+  token_hash varchar(64) [not null, note: 'SHA-256 해시만 저장 (원문 저장 안 함)']
+  expires_at datetime(6) [not null, note: '발급 후 14일']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+
+  indexes {
+    token_hash [unique, name: 'uk_refresh_token_hash']
+  }
+}
+
+Table bookmark [headercolor: #3498DB] {
+  id bigint [pk, increment]
+  member_id bigint [not null]
+  store_id bigint [not null]
+  created_at datetime(6) [not null, note: '저장한 시각 (최근 저장 순)']
+  updated_at datetime(6) [not null]
+
+  indexes {
+    (member_id, store_id) [unique, name: 'uk_bookmark_member_store']
+  }
+}
+
+Table store [headercolor: #27AE60] {
+  id bigint [pk, increment]
+  owner_id bigint [note: '사장님 회원. 운영진이 직접 등록한 가게는 없을 수 있음']
+  name varchar(255) [not null]
+  category varchar(20) [not null, note: 'KOREAN | WESTERN | JAPANESE | CHINESE | CAFE | BAKERY | ETC']
+  address varchar(255) [not null]
+  location "POINT SRID 4326" [not null, note: '반경 검색용 공간 인덱스']
+  phone varchar(255)
+  description varchar(300)
+  open_time time
+  close_time time [note: '자정 넘김 영업이면 open_time보다 이름']
+  break_start time
+  break_end time
+  closed_days varchar(30) [not null, default: '', note: '정기 휴무. 쉼표 구분 (MON,SAT)']
+  tags varchar(100) [not null, default: '', note: '편의 태그 최대 5개. 쉼표 구분']
+  recommended bit(1) [not null, default: 0, note: '운영진 추천']
+  business_status_override varchar(20) [note: '사장님이 정한 오늘 상태 OPEN | BREAK | CLOSED']
+  business_status_override_date date [note: '이 날짜에만 적용, 지나면 영업시간으로 계산']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+
+  indexes {
+    location [type: spatial, name: 'idx_store_location']
+  }
+}
+
+Table store_image [headercolor: #27AE60] {
+  id bigint [pk, increment]
+  store_id bigint [not null]
+  image_url varchar(500) [not null]
+  sort_order int [not null, note: '0이 대표 사진']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+
+  indexes {
+    (store_id, sort_order) [name: 'idx_store_image_store_order']
+  }
+}
+
+Table menu [headercolor: #27AE60] {
+  id bigint [pk, increment]
+  store_id bigint [not null]
+  name varchar(255) [not null]
+  description varchar(255)
+  price int [not null]
+  image_url varchar(500)
+  signature bit(1) [not null, default: 0, note: '대표 메뉴']
+  sold_out bit(1) [not null, default: 0, note: '품절']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+}
+
+Table benefit [headercolor: #27AE60] {
+  id bigint [pk, increment]
+  store_id bigint [not null]
+  title varchar(60) [not null, note: '공지 제목']
+  content varchar(1000) [not null, note: '할인 내용·이용 조건']
+  period_text varchar(100) [not null, note: '안내 기간 (글, 예: 11월 한 달 / 상시)']
+  published bit(1) [not null, default: 1, note: '공개 여부. 사장님이 전환']
+  partner bit(1) [not null, default: 0, note: '제휴 혜택 (운영진이 DB에서 지정)']
+  published_at datetime(6) [not null, note: '처음 게시한 시각']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+
+  Note: '할인 공지 (일반 할인·제휴 혜택). 게시하면 바로 공개, 검토 없음. 예약이 필요한 마감할인은 closing_deal (V2에서 변경)'
+}
+
+Table closing_deal [headercolor: #E67E22] {
+  id bigint [pk, increment]
+  store_id bigint [not null]
+  menu_id bigint [not null, note: '같은 가게의 메뉴만 가능']
+  original_price int [not null]
+  sale_price int [not null]
+  stock int [not null]
+  open_at datetime(6) [not null, note: '노출 시작']
+  pickup_end_at datetime(6) [not null, note: '수령 마감']
+  status varchar(20) [not null, note: 'SCHEDULED | OPEN | SOLD_OUT | CLOSED']
+  version bigint [note: '낙관적 락 (동시 예약)']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+}
+
+Table reservation [headercolor: #E67E22] {
+  id bigint [pk, increment]
+  member_id bigint [not null]
+  closing_deal_id bigint [not null]
+  quantity int [not null]
+  status varchar(20) [not null, note: 'RESERVED | PICKED_UP | CANCELED | NO_SHOW']
+  picked_up_at datetime(6)
+  version bigint [not null, default: 0, note: '취소·수령·노쇼 동시 처리용 낙관적 락 (V3)']
+  created_at datetime(6) [not null]
+  updated_at datetime(6) [not null]
+}
+
+Ref: refresh_token.member_id > member.id
+Ref: bookmark.member_id > member.id
+Ref: bookmark.store_id > store.id
+Ref: store.owner_id >? member.id
+Ref: store_image.store_id > store.id
+Ref: menu.store_id > store.id
+Ref: benefit.store_id > store.id
+Ref: closing_deal.store_id > store.id
+Ref: closing_deal.menu_id > menu.id
+Ref: reservation.member_id > member.id
+Ref: reservation.closing_deal_id > closing_deal.id
+
+TableGroup "회원" [color: #3498DB] {
+  member
+  refresh_token
+  bookmark
+}
+
+TableGroup "가게" [color: #27AE60] {
+  store
+  store_image
+  menu
+  benefit
+}
+
+TableGroup "마감할인 예약" [color: #E67E22] {
+  closing_deal
+  reservation
+}
