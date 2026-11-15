@@ -24,12 +24,14 @@ class OwnerReadException(
     cause: Throwable? = null,
 ) : IOException(message, cause)
 
+private const val OWNER_API_ROOT = ""
+
 /**
  * Read-only adapter for the owner GET endpoints in LastEat API v0.3.
  * Pass the host app's server URL and authenticated owner access token.
  * The host app must declare android.permission.INTERNET.
  */
-class OwnerReadApi(baseUrl: String) {
+class OwnerReadApi(baseUrl: String = OWNER_API_ROOT) {
     private val apiRoot: URI = URI(baseUrl.trim().trimEnd('/')).let { base ->
         require(base.scheme in setOf("http", "https") && base.host != null)
         require(base.rawUserInfo == null && base.rawQuery == null && base.rawFragment == null)

@@ -3,7 +3,13 @@ pluginManagement {
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { google(); mavenCentral() }
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://devrepo.kakao.com/nexus/content/groups/public/") {
+            content { includeGroup("com.kakao.sdk") }
+        }
+    }
 }
 rootProject.name = "LastEatPreview"
 include(":app")

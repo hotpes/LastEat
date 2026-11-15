@@ -3,6 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val kakaoNativeAppKey = providers.gradleProperty("KAKAO_NATIVE_APP_KEY")
+    .orElse(providers.environmentVariable("KAKAO_NATIVE_APP_KEY"))
+    .getOrElse("")
+    .trim()
+require(kakaoNativeAppKey.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' }) {
+    "KAKAO_NATIVE_APP_KEY contains an invalid character."
+}
+
 android {
     namespace = "com.lasteat.app"
     compileSdk = 36
@@ -12,15 +21,25 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0-preview"
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+        manifestPlaceholders["kakaoLoginScheme"] = if (kakaoNativeAppKey.isEmpty()) {
+            "lasteat-kakao-unconfigured"
+        } else {
+            "kakao$kakaoNativeAppKey"
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 dependencies {
+    implementation("com.kakao.sdk:v2-user:2.26.0")
     implementation("com.caverock:androidsvg-aar:1.4")
     implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.activity:activity-compose:1.11.0")
