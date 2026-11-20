@@ -83,6 +83,9 @@ VALUES ('노량진 국밥', 'KOREAN', '서울 동작구 노량진로 10',
         '24시간 끓이는 돼지국밥.', '00:00', '00:00', '24시간,혼밥 좋아요', 0, @now, @now);
 SET @s8 = LAST_INSERT_ID();
 
+-- 사장님 계정(owner-setup.sql로 만든 OWNER)이 있으면 다시 실행해도 '상도 한그릇' 주인으로 연결해 둔다
+UPDATE store SET owner_id = (SELECT id FROM member WHERE role = 'OWNER' ORDER BY id LIMIT 1) WHERE id = @s1;
+
 INSERT INTO store_image (store_id, image_url, sort_order, created_at, updated_at)
 VALUES (@s1, 'https://picsum.photos/seed/lasteat-s1-a/800/600', 0, @now, @now),
        (@s1, 'https://picsum.photos/seed/lasteat-s1-b/800/600', 1, @now, @now),
