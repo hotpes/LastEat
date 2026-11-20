@@ -207,10 +207,15 @@
 |---|---|:-:|
 | fcmToken | string | O |
 
+응답 `data`는 `null`
+
 <a id="members-delete"></a>
 ### DELETE /members/me — 회원 탈퇴 (로그인)
 
-- 저장한 가게와 토큰을 함께 삭제
+- 저장한 가게와 모든 기기의 토큰을 함께 삭제. 응답 `data`는 `null`
+- 지난 예약 기록은 "탈퇴한 회원"으로 남는다 (닉네임·이메일·푸시 토큰은 지움). 받지 않은 예약은 수령 마감 30분 뒤 노쇼 처리되며 재고가 돌아간다
+- 같은 카카오 계정으로 다시 로그인하면 새 회원으로 가입된다
+- 탈퇴 뒤 남은 accessToken으로 내 정보·탈퇴를 부르면 `INVALID_TOKEN`
 - 사장님으로 연결된 가게가 있으면 `OWNER_HAS_STORE` (운영진에게 연결 해제 요청)
 
 ---
@@ -856,10 +861,12 @@
 | file | file | O | jpg, png, webp, 10MB 이하 |
 | purpose | string | O | `STORE`, `MENU` |
 
-- 응답: `{ "url": "https://cdn.lasteat.app/uploads/2026/11/1f3a...jpg" }`
+- 응답: `{ "url": "https://{서버 주소}/uploads/store/2026/11/1f3a...jpg" }`. 이미지는 서버가 `/uploads/...`로 직접 내준다 (로그인 불필요)
 - 받은 URL을 [가게 정보 수정](#owner-store-put)이나 [메뉴 관리](#owner-menus)에 담아 보냄
-- 업로드만 하고 저장하지 않은 이미지는 서버가 주기적으로 삭제
-- 에러: `INVALID_FILE`, `FILE_TOO_LARGE`
+- 형식은 파일 내용으로 판단한다 (확장자·Content-Type은 보지 않음). 파일 이름은 서버가 정함
+- 서버 주소는 요청이 들어온 주소를 쓴다. 지금처럼 Cloudflare 임시 터널을 쓰면 터널 주소가 바뀔 때 예전 URL이 열리지 않는다 (고정 주소를 쓰면 해결)
+- 업로드만 하고 저장하지 않은 이미지 정리는 아직 없음 (나중에 추가)
+- 에러: `INVALID_FILE` (jpg·png·webp가 아니거나 빈 파일), `FILE_TOO_LARGE`, `INVALID_INPUT` (`file`·`purpose` 누락)
 
 ---
 

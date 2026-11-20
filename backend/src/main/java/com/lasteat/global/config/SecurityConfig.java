@@ -33,7 +33,9 @@ public class SecurityConfig {
 			"/api/v1/benefits",
 			"/api/v1/benefits/**",
 			"/api/v1/closing-deals",
-			"/api/v1/closing-deals/*"
+			"/api/v1/closing-deals/*",
+			// 업로드한 이미지 파일 (UploadResourceConfig)
+			"/uploads/**"
 	};
 
 	private static final String[] PUBLIC_POST_PATHS = {
@@ -61,7 +63,7 @@ public class SecurityConfig {
 						.requestMatchers(PUBLIC_PATHS).permitAll()
 						.requestMatchers(HttpMethod.GET, PUBLIC_GET_PATHS).permitAll()
 						.requestMatchers(HttpMethod.POST, PUBLIC_POST_PATHS).permitAll()
-						.requestMatchers("/api/v1/owner/**").hasRole(MemberRole.OWNER.name())
+						.requestMatchers("/api/v1/owner/**", "/api/v1/uploads/**").hasRole(MemberRole.OWNER.name())
 						.anyRequest().authenticated())
 				.build();
 	}
