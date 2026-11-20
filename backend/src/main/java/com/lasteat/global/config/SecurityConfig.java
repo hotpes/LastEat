@@ -63,6 +63,8 @@ public class SecurityConfig {
 						.requestMatchers(PUBLIC_PATHS).permitAll()
 						.requestMatchers(HttpMethod.GET, PUBLIC_GET_PATHS).permitAll()
 						.requestMatchers(HttpMethod.POST, PUBLIC_POST_PATHS).permitAll()
+						// 사장님 등록은 아직 손님인 회원이 부른다 (아래 사장님 전용 규칙보다 먼저)
+						.requestMatchers(HttpMethod.POST, "/api/v1/owner/registration").authenticated()
 						.requestMatchers("/api/v1/owner/**", "/api/v1/uploads/**").hasRole(MemberRole.OWNER.name())
 						.anyRequest().authenticated())
 				.build();

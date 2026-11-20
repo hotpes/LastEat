@@ -15,6 +15,8 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
 	long countByOwnerId(Long ownerId);
 
+	boolean existsByBusinessNumber(String businessNumber);
+
 	// 반경 안 가게를 가까운 순으로. 공간 인덱스(MBRContains + 사각형)로 먼저 거르고 실제 거리로 다시 거른다.
 	// 지금 영업 중 필터는 영업시간 계산이 복잡해서 서비스(Store.businessStatusAt)에서 한다.
 	// 좌표 WKT는 GeoPoint가 만든 숫자 문자열이고 나머지 값은 모두 바인딩 파라미터다.

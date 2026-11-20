@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,7 +35,9 @@ import org.locationtech.jts.geom.Point;
 
 @Getter
 @Entity
-@Table(name = "store")
+@Table(name = "store", uniqueConstraints = {
+		@UniqueConstraint(name = "uk_store_business_number", columnNames = "business_number")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Store extends BaseTimeEntity {
 
@@ -113,11 +116,17 @@ public class Store extends BaseTimeEntity {
 
 	private LocalDate businessStatusOverrideDate;
 
+	// 사장님 등록으로 만든 가게만 있다 (숫자 10자리, V6)
+	@Column(length = 10)
+	private String businessNumber;
+
 	@Builder
 	private Store(Member owner, String name, StoreCategory category, String address, Point location,
 			String phone, String description, LocalTime openTime, LocalTime closeTime,
-			LocalTime breakStart, LocalTime breakEnd, Set<DayOfWeek> closedDays, List<String> tags) {
+			LocalTime breakStart, LocalTime breakEnd, Set<DayOfWeek> closedDays, List<String> tags,
+			String businessNumber) {
 		this.owner = owner;
+		this.businessNumber = businessNumber;
 		this.name = name;
 		this.category = category;
 		this.address = address;

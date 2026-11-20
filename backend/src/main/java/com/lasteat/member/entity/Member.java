@@ -81,6 +81,11 @@ public class Member extends BaseTimeEntity {
 		this.withdrawnAt = Objects.requireNonNull(now, "탈퇴 시각이 필요합니다.");
 	}
 
+	// 사장님 등록(국세청 진위확인 통과) 뒤 사장님으로 바꾼다. 이미 사장님이면 그대로
+	public void promoteToOwner() {
+		this.role = MemberRole.OWNER;
+	}
+
 	public boolean isWithdrawn() {
 		return withdrawnAt != null;
 	}

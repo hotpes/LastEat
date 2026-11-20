@@ -9,6 +9,7 @@ public enum ErrorCode {
 
 	INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값을 확인해 주세요."),
 	INVALID_FILE(HttpStatus.BAD_REQUEST, "지원하지 않는 이미지 형식입니다."),
+	BUSINESS_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "사업자 정보가 국세청 정보와 일치하지 않습니다. 입력한 내용을 확인해 주세요."),
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
 	INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "로그인 정보가 올바르지 않습니다. 다시 로그인해 주세요."),
 	EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "로그인이 만료되었습니다."),
@@ -23,6 +24,8 @@ public enum ErrorCode {
 	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "예약을 찾을 수 없습니다."),
 	METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청 방식입니다."),
 	OWNER_HAS_STORE(HttpStatus.CONFLICT, "연결된 가게가 있어 탈퇴할 수 없습니다."),
+	BUSINESS_NOT_ACTIVE(HttpStatus.CONFLICT, "휴업 또는 폐업 상태인 사업자입니다."),
+	DUPLICATE_BUSINESS_NUMBER(HttpStatus.CONFLICT, "이미 등록된 사업자등록번호입니다."),
 	CLOSING_DEAL_NOT_OPEN(HttpStatus.CONFLICT, "지금은 예약하거나 바꿀 수 없는 마감할인입니다."),
 	OUT_OF_STOCK(HttpStatus.CONFLICT, "남은 수량이 부족합니다. 수량을 확인해 주세요."),
 	ALREADY_RESERVED(HttpStatus.CONFLICT, "이미 예약한 마감할인입니다."),
@@ -30,6 +33,7 @@ public enum ErrorCode {
 	RESERVATION_NOT_CANCELABLE(HttpStatus.CONFLICT, "취소할 수 없는 예약입니다."),
 	INVALID_RESERVATION_STATUS(HttpStatus.CONFLICT, "이미 처리된 예약입니다."),
 	FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "이미지는 10MB 이하만 올릴 수 있습니다."),
+	BUSINESS_VERIFICATION_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 사업자 확인을 할 수 없습니다. 잠시 후 다시 시도해 주세요."),
 	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
 	private final HttpStatus status;

@@ -40,6 +40,7 @@
 | GET | [`/reservations/{reservationId}`](#reservation-detail) | 내 예약 상세 (수령 화면) | 로그인 | 마이 › 예약 |
 | POST | [`/reservations/{reservationId}/cancel`](#reservation-cancel) | 예약 취소 | 로그인 | 마이 › 예약 |
 | **사장님 · 가게** | | | | |
+| POST | [`/owner/registration`](#owner-registration) | 사장님 등록 (사업자 진위확인) | 로그인 | 사장님 앱 › 사업자 인증 |
 | GET | [`/owner/stores`](#owner-stores) | 내 가게 목록 | 사장님 | 사장님 앱 › 홈 |
 | GET | [`/owner/stores/{storeId}`](#owner-store-get) | 가게 정보 조회 | 사장님 | 사장님 앱 › 가게 |
 | PUT | [`/owner/stores/{storeId}`](#owner-store-put) | 가게 정보 수정 | 사장님 | 사장님 앱 › 가게 |
@@ -604,7 +605,28 @@
 
 ## 사장님
 
-모든 API 사장님 로그인 필요. `{storeId}`가 본인 가게가 아니면 `NOT_STORE_OWNER` (403). 사장님 계정과 가게 연결은 1차에서 운영진이 직접 처리한다.
+[사장님 등록](#owner-registration)을 뺀 모든 API 사장님 로그인 필요. `{storeId}`가 본인 가게가 아니면 `NOT_STORE_OWNER` (403).
+
+<a id="owner-registration"></a>
+### POST /owner/registration — 사장님 등록 (로그인)
+
+손님 계정이 사업자등록증 정보로 사장님이 된다. 사업자 정보 3개를 국세청 [사업자등록정보 진위확인 API](https://www.data.go.kr/data/15081808/openapi.do)로 확인하고, 계속사업자면 가게를 만들어 연결한 뒤 사장님 권한이 들어간 새 토큰을 준다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|:-:|---|
+| businessNumber | string | O | 사업자등록번호 10자리, `-` 포함 가능 |
+| openDate | string | O | 개업연월일 `2021-03-15` (연도만으로는 확인되지 않음) |
+| representativeName | string | O | 대표자 성명 |
+| storeName | string | O | 가게 이름 1~30자. 상호와 달라도 됨 (국세청에 보내지 않음) |
+| category | string | O | [카테고리](#code-category) |
+| address | string | O | 가게 주소 |
+| lat, lng | number | O | 앱이 지도 SDK로 구한 좌표 |
+| phone | string | | 숫자와 `-` |
+
+- 응답: `{ "storeId": 3, "accessToken": "...", "refreshToken": "..." }`. 앱은 이전 토큰을 버리고 새 토큰으로 바꾼다
+- 영업시간은 비어 있어서 [영업시간 수정](#owner-hours) 전까지 가게는 `CLOSED`로 보인다. 사진·소개·태그는 [가게 정보 수정](#owner-store-put)으로
+- 이미 사장님이면 가게가 하나 더 생긴다. 같은 사업자등록번호는 한 번만 등록할 수 있다
+- 에러: `INVALID_INPUT`, `BUSINESS_NOT_VERIFIED` (국세청 정보와 다름), `BUSINESS_NOT_ACTIVE` (휴업·폐업), `DUPLICATE_BUSINESS_NUMBER`, `BUSINESS_VERIFICATION_UNAVAILABLE` (국세청 API 장애, 다시 시도)
 
 <a id="owner-stores"></a>
 ### GET /owner/stores — 내 가게 목록 (사장님)
@@ -933,6 +955,7 @@
 |---|---|---|
 | 400 | INVALID_INPUT | 필수값 누락, 형식·길이 오류 (`fields`에 상세) |
 | 400 | INVALID_FILE | 지원하지 않는 이미지 형식 |
+| 400 | BUSINESS_NOT_VERIFIED | 사업자 정보가 국세청 정보와 다름 (사장님 등록) |
 | 401 | UNAUTHORIZED | 토큰 없음 (로그인·사장님 API) |
 | 401 | INVALID_TOKEN | 잘못된 토큰 |
 | 401 | EXPIRED_TOKEN | accessToken 만료 → [토큰 재발급](#auth-refresh) |
@@ -947,6 +970,8 @@
 | 404 | RESERVATION_NOT_FOUND | 예약 없음 또는 본인 예약 아님 |
 | 405 | METHOD_NOT_ALLOWED | 지원하지 않는 HTTP 메서드 |
 | 409 | OWNER_HAS_STORE | 가게가 연결된 사장님의 탈퇴 |
+| 409 | BUSINESS_NOT_ACTIVE | 휴업·폐업 사업자 (사장님 등록) |
+| 409 | DUPLICATE_BUSINESS_NUMBER | 이미 등록된 사업자등록번호 (사장님 등록) |
 | 409 | CLOSING_DEAL_NOT_OPEN | 예약·수정할 수 없는 시간이거나 이미 마감된 마감할인 |
 | 409 | OUT_OF_STOCK | 남은 재고 부족 |
 | 409 | ALREADY_RESERVED | 같은 마감할인을 이미 예약 중 |
@@ -955,6 +980,7 @@
 | 409 | INVALID_RESERVATION_STATUS | 이미 처리된 예약 (수령·노쇼 처리할 때) |
 | 413 | FILE_TOO_LARGE | 이미지 10MB 초과 |
 | 500 | INTERNAL_ERROR | 서버 오류 |
+| 503 | BUSINESS_VERIFICATION_UNAVAILABLE | 국세청 진위확인 API를 쓸 수 없음, 다시 시도 |
 
 ## C. 명세 기준 엔티티 변경 사항 (Sprint 2 반영 완료)
 

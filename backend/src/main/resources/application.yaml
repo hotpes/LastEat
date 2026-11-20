@@ -35,3 +35,8 @@ jwt:
 kakao:
   base-url: https://kapi.kakao.com
   timeout: 3s
+
+# 국세청 사업자 진위확인. service-key는 프로필별 설정 또는 환경 변수(NTS_SERVICE_KEY)로 넣는다
+nts:
+  base-url: https://api.odcloud.kr/api/nts-businessman/v1
+  timeout: 5s

@@ -10,6 +10,10 @@ jwt:
 kakao:
   app-id: 1234
 
+# 테스트는 NtsClient를 목으로 바꾼다
+nts:
+  service-key: test-only-key
+
 # 주기 작업(마감할인 자동 마감)은 테스트에서 직접 호출한다
 lasteat:
   scheduler:

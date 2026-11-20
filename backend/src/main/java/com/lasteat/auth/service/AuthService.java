@@ -76,7 +76,8 @@ public class AuthService {
 		refreshTokenRepository.deleteByTokenHash(RefreshTokens.hash(rawRefreshToken));
 	}
 
-	private TokenResponse issueTokens(Member member) {
+	// 역할이 바뀌었을 때(사장님 등록)도 새 토큰을 주려고 공개한다. 호출하는 쪽 트랜잭션 안에서 refreshToken을 저장한다
+	public TokenResponse issueTokens(Member member) {
 		String rawRefreshToken = RefreshTokens.generate();
 		refreshTokenRepository.save(RefreshToken.builder()
 				.member(member)
