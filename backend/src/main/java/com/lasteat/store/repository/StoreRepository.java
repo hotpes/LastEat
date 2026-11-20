@@ -26,7 +26,7 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 			  AND (:keyword IS NULL
 			       OR s.name LIKE :keyword
 			       OR s.category IN (:keywordCategories)
-			       OR EXISTS (SELECT 1 FROM menu m WHERE m.store_id = s.id AND m.name LIKE :keyword))
+			       OR EXISTS (SELECT 1 FROM menu m WHERE m.store_id = s.id AND m.deleted = FALSE AND m.name LIKE :keyword))
 			  AND (:hasBenefit = FALSE
 			       OR EXISTS (SELECT 1 FROM benefit b WHERE b.store_id = s.id AND b.published = TRUE))
 			ORDER BY distance, s.id
