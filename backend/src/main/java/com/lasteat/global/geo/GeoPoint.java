@@ -4,7 +4,10 @@ import com.lasteat.global.exception.BusinessException;
 import com.lasteat.global.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.util.Optional;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 
 // 위도·경도 좌표. 거리 계산은 MySQL ST_Distance_Sphere와 같은 지구 반지름을 써서 결과를 맞춘다.
 public record GeoPoint(double lat, double lng) {
@@ -15,6 +18,8 @@ public record GeoPoint(double lat, double lng) {
 	private static final double MAX_LAT = 90;
 
 	private static final double MAX_LNG = 180;
+
+	private static final GeometryFactory GEOMETRY = new GeometryFactory(new PrecisionModel(), 4326);
 
 	public GeoPoint {
 		if (lat < -MAX_LAT || lat > MAX_LAT || lng < -MAX_LNG || lng > MAX_LNG) {
@@ -36,6 +41,11 @@ public record GeoPoint(double lat, double lng) {
 	// 가게 위치 Point는 x=경도, y=위도로 저장되어 있다
 	public static GeoPoint from(Point point) {
 		return new GeoPoint(point.getY(), point.getX());
+	}
+
+	// 가게 위치 저장용 Point (x=경도, y=위도, SRID 4326)
+	public Point toPoint() {
+		return GEOMETRY.createPoint(new Coordinate(lng, lat));
 	}
 
 	public int distanceMetersTo(GeoPoint other) {

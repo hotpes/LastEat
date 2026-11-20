@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +18,11 @@ public interface StoreImageRepository extends JpaRepository<StoreImage, Long> {
 
 	@Query("select i from StoreImage i where i.store.id = :storeId order by i.sortOrder, i.id")
 	List<StoreImage> findAllByStoreId(@Param("storeId") Long storeId);
+
+	// 사진 교체용. 새 사진을 넣기 전에 바로 지운다
+	@Modifying(flushAutomatically = true)
+	@Query("delete from StoreImage i where i.store.id = :storeId")
+	void deleteAllByStoreId(@Param("storeId") Long storeId);
 
 	// 가게 id → 대표 사진 URL. 사진이 없는 가게는 키가 없다
 	default Map<Long, String> findThumbnailUrls(Collection<Long> storeIds) {

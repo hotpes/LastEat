@@ -42,6 +42,16 @@ public class Store extends BaseTimeEntity {
 
 	public static final int MAX_TAG_LENGTH = 10;
 
+	public static final int MAX_NAME_LENGTH = 30;
+
+	public static final int MAX_ADDRESS_LENGTH = 255;
+
+	public static final int MAX_DESCRIPTION_LENGTH = 300;
+
+	public static final int MAX_PHONE_LENGTH = 20;
+
+	public static final int MAX_IMAGE_COUNT = 30;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -122,6 +132,50 @@ public class Store extends BaseTimeEntity {
 		this.tags = validateTags(tags);
 	}
 
+	// 사장님 가게 정보 수정. 앞뒤 공백은 지우고, 빈 설명·전화번호는 null로 저장한다.
+	// 영업시간·영업 상태·추천 여부는 바꾸지 않는다.
+	public void updateInfo(String name, StoreCategory category, String address, Point location, String phone,
+			String description, List<String> tags) {
+		String strippedName = blankToNull(name);
+		if (strippedName == null || strippedName.length() > MAX_NAME_LENGTH) {
+			throw new IllegalArgumentException("가게 이름은 1~" + MAX_NAME_LENGTH + "자여야 합니다.");
+		}
+		String strippedAddress = blankToNull(address);
+		if (strippedAddress == null || strippedAddress.length() > MAX_ADDRESS_LENGTH) {
+			throw new IllegalArgumentException("주소는 1~" + MAX_ADDRESS_LENGTH + "자여야 합니다.");
+		}
+		String strippedDescription = blankToNull(description);
+		if (strippedDescription != null && strippedDescription.length() > MAX_DESCRIPTION_LENGTH) {
+			throw new IllegalArgumentException("가게 소개는 " + MAX_DESCRIPTION_LENGTH + "자 이하여야 합니다.");
+		}
+		List<String> validTags = validateTags(tags == null ? null : tags.stream().map(Store::strip).toList());
+		this.name = strippedName;
+		this.category = Objects.requireNonNull(category, "카테고리가 필요합니다.");
+		this.address = strippedAddress;
+		this.location = Objects.requireNonNull(location, "좌표가 필요합니다.");
+		this.phone = blankToNull(phone);
+		this.description = strippedDescription;
+		this.tags = validTags;
+	}
+
+	// 영업시간 변경. 쉬는 시간은 둘 다 있거나 둘 다 없어야 하고, 시작이 끝보다 빨라야 한다 (자정 넘김 불가).
+	public void changeHours(LocalTime openTime, LocalTime closeTime, LocalTime breakStart, LocalTime breakEnd,
+			Set<DayOfWeek> closedDays) {
+		Objects.requireNonNull(openTime, "여는 시각이 필요합니다.");
+		Objects.requireNonNull(closeTime, "닫는 시각이 필요합니다.");
+		if ((breakStart == null) != (breakEnd == null)) {
+			throw new IllegalArgumentException("쉬는 시간은 시작과 끝이 함께 필요합니다.");
+		}
+		if (breakStart != null && !breakStart.isBefore(breakEnd)) {
+			throw new IllegalArgumentException("쉬는 시간 시작이 끝보다 빨라야 합니다.");
+		}
+		this.openTime = openTime;
+		this.closeTime = closeTime;
+		this.breakStart = breakStart;
+		this.breakEnd = breakEnd;
+		this.closedDays = closedDays == null ? Set.of() : Set.copyOf(closedDays);
+	}
+
 	public void overrideBusinessStatus(BusinessStatus status, LocalDate date) {
 		this.businessStatusOverride = Objects.requireNonNull(status, "영업 상태가 필요합니다.");
 		this.businessStatusOverrideDate = Objects.requireNonNull(date, "적용 날짜가 필요합니다.");
@@ -192,6 +246,17 @@ public class Store extends BaseTimeEntity {
 			}
 		}
 		return List.copyOf(tags);
+	}
+
+	private static String strip(String value) {
+		return value == null ? null : value.strip();
+	}
+
+	private static String blankToNull(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+		return value.strip();
 	}
 
 }

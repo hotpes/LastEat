@@ -637,9 +637,11 @@
 | description | string | | 300자 이하 |
 | phone | string | | 숫자와 `-` |
 | imageUrls | string[] | | 최대 30장, 첫 번째가 대표 사진. [업로드](#upload)에서 받은 URL |
-| tags | string[] | | 최대 5개, 각 10자 이하 |
+| tags | string[] | | 최대 5개, 각 10자 이하, 쉼표 불가 |
 
-응답: [가게 정보 조회](#owner-store-get)와 같은 형식
+- `imageUrls`·`tags`는 보낸 목록으로 통째로 바뀐다. 생략하거나 빈 배열이면 모두 지운다 (기존 값을 유지하려면 조회한 값을 그대로 보낸다)
+- 빈 `description`·`phone`은 `null`로 저장. 영업시간·영업 상태는 바뀌지 않는다
+- 응답: [가게 정보 조회](#owner-store-get)와 같은 형식. 에러: `STORE_NOT_FOUND`, `INVALID_INPUT`
 
 <a id="owner-hours"></a>
 ### PUT /owner/stores/{storeId}/hours — 영업시간 수정 (사장님)
@@ -648,10 +650,11 @@
 |---|---|:-:|---|
 | openTime | string | O | `11:00` |
 | closeTime | string | O | `21:00`. 자정을 넘기면 `openTime`보다 이른 시각 (예: `02:00`) |
-| breakStart, breakEnd | string | | 쉬는 시간, 둘 다 보내거나 둘 다 생략 |
-| closedDays | string[] | | 정기 휴무 [요일](#code-day) `["MON"]` |
+| breakStart, breakEnd | string | | 쉬는 시간, 둘 다 보내거나 둘 다 생략. 시작이 끝보다 빨라야 함 |
+| closedDays | string[] | | 정기 휴무 [요일](#code-day) `["MON"]`, 생략하면 휴무 없음 |
 
-사장님 앱은 요일을 숫자(1=월 ~ 7=일)로 가지고 있으므로 보낼 때 요일 코드로 바꾼다.
+사장님 앱은 요일을 숫자(1=월 ~ 7=일)로 가지고 있으므로 보낼 때 요일 코드로 바꾼다. 여는 시각과 닫는 시각이 같으면 24시간 영업.
+응답: [가게 정보 조회](#owner-store-get)와 같은 형식. 에러: `STORE_NOT_FOUND`, `INVALID_INPUT`
 
 <a id="owner-status"></a>
 ### PATCH /owner/stores/{storeId}/business-status — 오늘 영업 상태 변경 (사장님)
@@ -688,6 +691,10 @@
 | signature | boolean | | 대표 메뉴 여부, 기본 false |
 
 응답: 메뉴 객체. 에러: `MENU_NOT_FOUND`
+
+- 수정은 품절 여부를 바꾸지 않는다 (품절은 `sold-out`으로만)
+- 삭제한 메뉴는 손님·사장님 메뉴 목록, 대표 메뉴, 메뉴 이름 검색, 마감할인 등록에서 빠진다. 지난 마감할인·예약 기록은 메뉴 이름 그대로 남는다. 진행 중인 마감할인은 그대로 열려 있으므로 필요하면 [조기 마감](#owner-deal-edit)한다
+- 삭제 응답 `data`는 `null`
 
 <a id="owner-benefit-create"></a>
 ### POST /owner/stores/{storeId}/benefits — 할인 공지 게시 (사장님)
