@@ -104,9 +104,9 @@ class AuthIntegrationTest {
 		given(kakaoClient.fetchUser("token-3")).willReturn(new KakaoUser("1003", null, null));
 		String accessToken = data(login("token-3", null)).get("accessToken").asString();
 
-		// 아직 컨트롤러가 없는 주소: 인증을 통과하면 404, 막히면 401
 		mockMvc.perform(get("/api/v1/members/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
-				.andExpect(status().isNotFound());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.role").value("CONSUMER"));
 		mockMvc.perform(get("/api/v1/members/me"))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));

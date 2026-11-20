@@ -4,8 +4,8 @@
 {$DOMAIN} {
 	encode gzip
 
-	# API, API 문서(Swagger), 헬스 체크만 앱으로 넘긴다. 나머지 경로는 밖에 열지 않는다
-	@app path /api/* /swagger-ui/* /swagger-ui.html /v3/api-docs /v3/api-docs/* /actuator/health
+	# API, 업로드 이미지, API 문서(Swagger), 헬스 체크만 앱으로 넘긴다. 나머지 경로는 밖에 열지 않는다
+	@app path /api/* /uploads/* /swagger-ui/* /swagger-ui.html /v3/api-docs /v3/api-docs/* /actuator/health
 	handle @app {
 		reverse_proxy app:8080
 	}

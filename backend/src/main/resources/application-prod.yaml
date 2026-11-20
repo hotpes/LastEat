@@ -9,6 +9,17 @@ spring:
     # 운영 DB에서 clean(전체 삭제) 명령이 실행되지 않게 막는다
     clean-disabled: true
 
+# Caddy·Cloudflare 터널 뒤에서 돈다. 업로드 응답 URL을 https 공개 주소로 만들려고 X-Forwarded-* 를 따른다
+# (앱 포트는 compose 내부에서만 열려 있어서 프록시만 이 헤더를 보낼 수 있다)
+server:
+  forward-headers-strategy: framework
+
+# UPLOAD_DIR: 이미지 저장 폴더 (compose 볼륨). UPLOAD_PUBLIC_BASE_URL: 비우면 요청 주소 기준
+lasteat:
+  upload:
+    dir: ${UPLOAD_DIR:/app/uploads}
+    public-base-url: ${UPLOAD_PUBLIC_BASE_URL:}
+
 management:
   endpoint:
     health:
@@ -21,3 +32,7 @@ jwt:
 
 kakao:
   app-id: ${KAKAO_APP_ID}
+
+# NTS_SERVICE_KEY: 공공데이터포털 > 마이페이지 > 국세청 사업자등록정보 진위확인 일반 인증키(Decoding)
+nts:
+  service-key: ${NTS_SERVICE_KEY}

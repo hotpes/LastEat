@@ -40,6 +40,7 @@
 | GET | [`/reservations/{reservationId}`](#reservation-detail) | 내 예약 상세 (수령 화면) | 로그인 | 마이 › 예약 |
 | POST | [`/reservations/{reservationId}/cancel`](#reservation-cancel) | 예약 취소 | 로그인 | 마이 › 예약 |
 | **사장님 · 가게** | | | | |
+| POST | [`/owner/registration`](#owner-registration) | 사장님 등록 (사업자 진위확인) | 로그인 | 사장님 앱 › 사업자 인증 |
 | GET | [`/owner/stores`](#owner-stores) | 내 가게 목록 | 사장님 | 사장님 앱 › 홈 |
 | GET | [`/owner/stores/{storeId}`](#owner-store-get) | 가게 정보 조회 | 사장님 | 사장님 앱 › 가게 |
 | PUT | [`/owner/stores/{storeId}`](#owner-store-put) | 가게 정보 수정 | 사장님 | 사장님 앱 › 가게 |
@@ -207,10 +208,15 @@
 |---|---|:-:|
 | fcmToken | string | O |
 
+응답 `data`는 `null`
+
 <a id="members-delete"></a>
 ### DELETE /members/me — 회원 탈퇴 (로그인)
 
-- 저장한 가게와 토큰을 함께 삭제
+- 저장한 가게와 모든 기기의 토큰을 함께 삭제. 응답 `data`는 `null`
+- 지난 예약 기록은 "탈퇴한 회원"으로 남는다 (닉네임·이메일·푸시 토큰은 지움). 받지 않은 예약은 수령 마감 30분 뒤 노쇼 처리되며 재고가 돌아간다
+- 같은 카카오 계정으로 다시 로그인하면 새 회원으로 가입된다
+- 탈퇴 뒤 남은 accessToken으로 내 정보·탈퇴를 부르면 `INVALID_TOKEN`
 - 사장님으로 연결된 가게가 있으면 `OWNER_HAS_STORE` (운영진에게 연결 해제 요청)
 
 ---
@@ -599,7 +605,28 @@
 
 ## 사장님
 
-모든 API 사장님 로그인 필요. `{storeId}`가 본인 가게가 아니면 `NOT_STORE_OWNER` (403). 사장님 계정과 가게 연결은 1차에서 운영진이 직접 처리한다.
+[사장님 등록](#owner-registration)을 뺀 모든 API 사장님 로그인 필요. `{storeId}`가 본인 가게가 아니면 `NOT_STORE_OWNER` (403).
+
+<a id="owner-registration"></a>
+### POST /owner/registration — 사장님 등록 (로그인)
+
+손님 계정이 사업자등록증 정보로 사장님이 된다. 사업자 정보 3개를 국세청 [사업자등록정보 진위확인 API](https://www.data.go.kr/data/15081808/openapi.do)로 확인하고, 계속사업자면 가게를 만들어 연결한 뒤 사장님 권한이 들어간 새 토큰을 준다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|:-:|---|
+| businessNumber | string | O | 사업자등록번호 10자리, `-` 포함 가능 |
+| openDate | string | O | 개업연월일 `2021-03-15` (연도만으로는 확인되지 않음) |
+| representativeName | string | O | 대표자 성명 |
+| storeName | string | O | 가게 이름 1~30자. 상호와 달라도 됨 (국세청에 보내지 않음) |
+| category | string | O | [카테고리](#code-category) |
+| address | string | O | 가게 주소 |
+| lat, lng | number | O | 앱이 지도 SDK로 구한 좌표 |
+| phone | string | | 숫자와 `-` |
+
+- 응답: `{ "storeId": 3, "accessToken": "...", "refreshToken": "..." }`. 앱은 이전 토큰을 버리고 새 토큰으로 바꾼다
+- 영업시간은 비어 있어서 [영업시간 수정](#owner-hours) 전까지 가게는 `CLOSED`로 보인다. 사진·소개·태그는 [가게 정보 수정](#owner-store-put)으로
+- 이미 사장님이면 가게가 하나 더 생긴다. 같은 사업자등록번호는 한 번만 등록할 수 있다
+- 에러: `INVALID_INPUT`, `BUSINESS_NOT_VERIFIED` (국세청 정보와 다름), `BUSINESS_NOT_ACTIVE` (휴업·폐업), `DUPLICATE_BUSINESS_NUMBER`, `BUSINESS_VERIFICATION_UNAVAILABLE` (국세청 API 장애, 다시 시도)
 
 <a id="owner-stores"></a>
 ### GET /owner/stores — 내 가게 목록 (사장님)
@@ -631,15 +658,21 @@
 | 필드 | 타입 | 필수 | 제약 |
 |---|---|:-:|---|
 | name | string | O | 1~30자 |
-| category | string | O | [카테고리](#code-category) |
 | address | string | O | |
-| lat, lng | number | O | 주소를 바꾸면 앱이 지도 SDK로 좌표를 구해 함께 보냄 |
+| category | string | | [카테고리](#code-category) |
+| lat, lng | number | | 둘 다 보내거나 둘 다 생략 |
 | description | string | | 300자 이하 |
 | phone | string | | 숫자와 `-` |
-| imageUrls | string[] | | 최대 30장, 첫 번째가 대표 사진. [업로드](#upload)에서 받은 URL |
-| tags | string[] | | 최대 5개, 각 10자 이하 |
+| imageUrls | string[] | | 사진 목록 통째로 교체. 최대 30장, 첫 번째가 대표 사진. [업로드](#upload)에서 받은 URL |
+| mainImageUrl | string | | 대표 사진(첫 번째)만 교체. 나머지 사진은 그대로, 사진이 없으면 추가 |
+| tags | string[] | | 목록 통째로 교체. 최대 5개, 각 10자 이하, 쉼표 불가 |
 
-응답: [가게 정보 조회](#owner-store-get)와 같은 형식
+- **보낸 칸만 바뀐다.** 이름·주소 말고는 생략하거나 `null`이면 기존 값 그대로 (사장님 앱 폼에 카테고리·좌표·태그 칸이 없음)
+- `description`·`phone`은 빈 문자열을 보내면 지운다. `imageUrls`·`tags`는 빈 배열을 보내면 모두 지운다
+- 사진은 `imageUrls`와 `mainImageUrl` 중 하나만 보낸다 (둘 다 보내면 `INVALID_INPUT`)
+- 좌표는 `lat`·`lng`를 보낼 때만 바뀐다. 주소만 바꾸면 지도 위치는 예전 그대로이므로, 주소 변경 시 좌표 처리는 아직 미정 (앱 지도 SDK 또는 서버 주소 검색)
+- 영업시간·영업 상태는 바뀌지 않는다
+- 응답: [가게 정보 조회](#owner-store-get)와 같은 형식. 에러: `STORE_NOT_FOUND`, `INVALID_INPUT`
 
 <a id="owner-hours"></a>
 ### PUT /owner/stores/{storeId}/hours — 영업시간 수정 (사장님)
@@ -648,10 +681,11 @@
 |---|---|:-:|---|
 | openTime | string | O | `11:00` |
 | closeTime | string | O | `21:00`. 자정을 넘기면 `openTime`보다 이른 시각 (예: `02:00`) |
-| breakStart, breakEnd | string | | 쉬는 시간, 둘 다 보내거나 둘 다 생략 |
-| closedDays | string[] | | 정기 휴무 [요일](#code-day) `["MON"]` |
+| breakStart, breakEnd | string | | 쉬는 시간, 둘 다 보내거나 둘 다 생략. 시작이 끝보다 빨라야 함 |
+| closedDays | string[] | | 정기 휴무 [요일](#code-day) `["MON"]`, 생략하면 휴무 없음 |
 
-사장님 앱은 요일을 숫자(1=월 ~ 7=일)로 가지고 있으므로 보낼 때 요일 코드로 바꾼다.
+사장님 앱은 요일을 숫자(1=월 ~ 7=일)로 가지고 있으므로 보낼 때 요일 코드로 바꾼다. 여는 시각과 닫는 시각이 같으면 24시간 영업.
+응답: [가게 정보 조회](#owner-store-get)와 같은 형식. 에러: `STORE_NOT_FOUND`, `INVALID_INPUT`
 
 <a id="owner-status"></a>
 ### PATCH /owner/stores/{storeId}/business-status — 오늘 영업 상태 변경 (사장님)
@@ -681,13 +715,17 @@
 
 | 필드 | 타입 | 필수 | 제약 |
 |---|---|:-:|---|
-| name | string | O | 1~30자 |
+| name | string | O | 1~40자 |
 | price | int | O | 0 이상 |
-| description | string | | 100자 이하 |
+| description | string | | 150자 이하 |
 | imageUrl | string | | [업로드](#upload)에서 받은 URL |
-| signature | boolean | | 대표 메뉴 여부, 기본 false |
+| signature | boolean | | 대표 메뉴 여부. 추가할 때 생략하면 false, 수정할 때 생략하면 기존 값 유지 |
 
 응답: 메뉴 객체. 에러: `MENU_NOT_FOUND`
+
+- 수정은 품절 여부를 바꾸지 않는다 (품절은 `sold-out`으로만)
+- 삭제한 메뉴는 손님·사장님 메뉴 목록, 대표 메뉴, 메뉴 이름 검색, 마감할인 등록에서 빠진다. 지난 마감할인·예약 기록은 메뉴 이름 그대로 남는다. 진행 중인 마감할인은 그대로 열려 있으므로 필요하면 [조기 마감](#owner-deal-edit)한다
+- 삭제 응답 `data`는 `null`
 
 <a id="owner-benefit-create"></a>
 ### POST /owner/stores/{storeId}/benefits — 할인 공지 게시 (사장님)
@@ -849,10 +887,12 @@
 | file | file | O | jpg, png, webp, 10MB 이하 |
 | purpose | string | O | `STORE`, `MENU` |
 
-- 응답: `{ "url": "https://cdn.lasteat.app/uploads/2026/11/1f3a...jpg" }`
+- 응답: `{ "url": "https://{서버 주소}/uploads/store/2026/11/1f3a...jpg" }`. 이미지는 서버가 `/uploads/...`로 직접 내준다 (로그인 불필요)
 - 받은 URL을 [가게 정보 수정](#owner-store-put)이나 [메뉴 관리](#owner-menus)에 담아 보냄
-- 업로드만 하고 저장하지 않은 이미지는 서버가 주기적으로 삭제
-- 에러: `INVALID_FILE`, `FILE_TOO_LARGE`
+- 형식은 파일 내용으로 판단한다 (확장자·Content-Type은 보지 않음). 파일 이름은 서버가 정함
+- 서버 주소는 요청이 들어온 주소를 쓴다. 지금처럼 Cloudflare 임시 터널을 쓰면 터널 주소가 바뀔 때 예전 URL이 열리지 않는다 (고정 주소를 쓰면 해결)
+- 업로드만 하고 저장하지 않은 이미지 정리는 아직 없음 (나중에 추가)
+- 에러: `INVALID_FILE` (jpg·png·webp가 아니거나 빈 파일), `FILE_TOO_LARGE`, `INVALID_INPUT` (`file`·`purpose` 누락)
 
 ---
 
@@ -919,6 +959,7 @@
 |---|---|---|
 | 400 | INVALID_INPUT | 필수값 누락, 형식·길이 오류 (`fields`에 상세) |
 | 400 | INVALID_FILE | 지원하지 않는 이미지 형식 |
+| 400 | BUSINESS_NOT_VERIFIED | 사업자 정보가 국세청 정보와 다름 (사장님 등록) |
 | 401 | UNAUTHORIZED | 토큰 없음 (로그인·사장님 API) |
 | 401 | INVALID_TOKEN | 잘못된 토큰 |
 | 401 | EXPIRED_TOKEN | accessToken 만료 → [토큰 재발급](#auth-refresh) |
@@ -933,6 +974,8 @@
 | 404 | RESERVATION_NOT_FOUND | 예약 없음 또는 본인 예약 아님 |
 | 405 | METHOD_NOT_ALLOWED | 지원하지 않는 HTTP 메서드 |
 | 409 | OWNER_HAS_STORE | 가게가 연결된 사장님의 탈퇴 |
+| 409 | BUSINESS_NOT_ACTIVE | 휴업·폐업 사업자 (사장님 등록) |
+| 409 | DUPLICATE_BUSINESS_NUMBER | 이미 등록된 사업자등록번호 (사장님 등록) |
 | 409 | CLOSING_DEAL_NOT_OPEN | 예약·수정할 수 없는 시간이거나 이미 마감된 마감할인 |
 | 409 | OUT_OF_STOCK | 남은 재고 부족 |
 | 409 | ALREADY_RESERVED | 같은 마감할인을 이미 예약 중 |
@@ -941,6 +984,7 @@
 | 409 | INVALID_RESERVATION_STATUS | 이미 처리된 예약 (수령·노쇼 처리할 때) |
 | 413 | FILE_TOO_LARGE | 이미지 10MB 초과 |
 | 500 | INTERNAL_ERROR | 서버 오류 |
+| 503 | BUSINESS_VERIFICATION_UNAVAILABLE | 국세청 진위확인 API를 쓸 수 없음, 다시 시도 |
 
 ## C. 명세 기준 엔티티 변경 사항 (Sprint 2 반영 완료)
 

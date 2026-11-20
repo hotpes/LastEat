@@ -49,4 +49,12 @@ public class StoreImage extends BaseTimeEntity {
 		this.sortOrder = sortOrder;
 	}
 
+	// 대표 사진만 바꿀 때 (순서는 그대로)
+	public void changeImageUrl(String imageUrl) {
+		if (imageUrl == null || imageUrl.isBlank()) {
+			throw new IllegalArgumentException("사진 주소가 필요합니다.");
+		}
+		this.imageUrl = imageUrl.strip();
+	}
+
 }

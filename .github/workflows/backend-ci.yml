@@ -78,7 +78,7 @@ jobs:
       - name: Check compose config
         working-directory: deploy
         run: |
-          export DOMAIN=example.com DB_PASSWORD=ci DB_ROOT_PASSWORD=ci JWT_SECRET=ci KAKAO_APP_ID=1
+          export DOMAIN=example.com DB_PASSWORD=ci DB_ROOT_PASSWORD=ci JWT_SECRET=ci KAKAO_APP_ID=1 NTS_SERVICE_KEY=ci
           docker compose config --quiet
           docker compose -f compose.yaml -f compose.local.yaml config --quiet
 

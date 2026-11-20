@@ -22,6 +22,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 	@Query("delete from RefreshToken r where r.tokenHash = :tokenHash")
 	int deleteByTokenHash(@Param("tokenHash") String tokenHash);
 
+	// 탈퇴: 모든 기기의 refreshToken
+	@Modifying(flushAutomatically = true)
+	@Query("delete from RefreshToken r where r.member.id = :memberId")
+	int deleteAllByMemberId(@Param("memberId") Long memberId);
+
 	@Modifying(flushAutomatically = true)
 	@Query("delete from RefreshToken r where r.member = :member and r.expiresAt <= :now")
 	int deleteExpired(@Param("member") Member member, @Param("now") LocalDateTime now);

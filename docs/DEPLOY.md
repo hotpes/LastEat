@@ -14,7 +14,7 @@
 | `deploy/caddy/Caddyfile` | `/api/*`, Swagger(`/swagger-ui/*`, `/v3/api-docs`), `/actuator/health`만 앱으로. 나머지는 404. 인증서 자동 발급 |
 | `deploy/deploy.sh` | 서버에서 main 최신 설정·이미지로 다시 띄우고 health 확인. CI가 실행하고, 손으로 실행해도 된다 |
 | `deploy/compose.local.yaml` | 로컬에서 이미지를 직접 빌드할 때 덧붙이는 파일 (MySQL은 3307) |
-| `deploy/.env.example` | 서버에 채울 값: `DOMAIN`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `JWT_SECRET`, `KAKAO_APP_ID`, `APP_TAG`(선택) |
+| `deploy/.env.example` | 서버에 채울 값: `DOMAIN`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `JWT_SECRET`, `KAKAO_APP_ID`, `NTS_SERVICE_KEY`, `APP_TAG`(선택) |
 | `.github/workflows/backend-ci.yml` | PR·main: 테스트 + 이미지 빌드 확인. main: GHCR 업로드(`latest`, `sha-xxxxxxx`) → 서버 배포 |
 
 ## 로컬에서 운영 구성 띄워 보기

@@ -16,6 +16,8 @@ RUN --mount=type=cache,target=/root/.gradle ./gradlew bootJar --no-daemon -q \
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app app
+# 업로드 볼륨이 처음 만들어질 때 이 폴더의 소유자(app)를 그대로 가져가서 앱이 쓸 수 있다
+RUN mkdir -p /app/uploads && chown app:app /app/uploads
 COPY --from=build /src/app.jar app.jar
 USER app
 

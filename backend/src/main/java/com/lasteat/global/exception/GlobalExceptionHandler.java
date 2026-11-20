@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -53,6 +54,12 @@ public class GlobalExceptionHandler {
 								reasonOf(error))))
 				.toList();
 		return respond(ErrorCode.INVALID_INPUT, fields);
+	}
+
+	// multipart 요청에 파일 칸이 없을 때
+	@ExceptionHandler(MissingServletRequestPartException.class)
+	ResponseEntity<ApiResponse<Void>> handleMissingPart(MissingServletRequestPartException e) {
+		return respond(ErrorCode.INVALID_INPUT, List.of(new FieldErrorDetail(e.getRequestPartName(), REQUIRED)));
 	}
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)

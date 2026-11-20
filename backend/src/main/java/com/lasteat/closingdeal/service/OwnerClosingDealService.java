@@ -50,8 +50,7 @@ public class OwnerClosingDealService {
 	@Transactional
 	public OwnerClosingDealResponse create(Long storeId, Long memberId, ClosingDealCreateRequest request) {
 		Store store = ownedStoreReader.read(storeId, memberId);
-		Menu menu = menuRepository.findById(request.menuId())
-				.filter(found -> found.getStore().getId().equals(storeId))
+		Menu menu = menuRepository.findActiveByIdAndStoreId(request.menuId(), storeId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.MENU_NOT_FOUND));
 		LocalDateTime now = LocalDateTime.now(clock);
 		LocalDateTime openAt = SeoulTime.toLocal(request.openAt());
