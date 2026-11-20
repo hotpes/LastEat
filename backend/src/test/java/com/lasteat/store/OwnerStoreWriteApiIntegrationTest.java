@@ -175,17 +175,56 @@ class OwnerStoreWriteApiIntegrationTest {
 	}
 
 	@Test
-	void 사진과_태그를_생략하면_비우고_빈_설명과_전화번호는_null이다() throws Exception {
+	void 사장님_앱_폼처럼_보내면_보낸_칸만_바뀌고_대표_사진만_교체된다() throws Exception {
+		// 카테고리·좌표·태그·두 번째 사진이 있는 가게
+		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), VALID_INFO).andExpect(status().isOk());
+
 		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), """
-				{"name": "연남 온기", "category": "KOREAN", "address": "서울 동작구 상도로 1",
-				 "lat": 37.4972, "lng": 126.9575, "description": "  ", "phone": ""}
+				{"name": "온기 식당", "description": "소개 변경", "address": "서울 동작구 상도로 55",
+				 "phone": "02-999-0000", "mainImageUrl": "https://cdn.lasteat.app/new.jpg"}
 				""")
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.imageUrls", hasSize(0)))
-				.andExpect(jsonPath("$.data.tags", hasSize(0)))
+				.andExpect(jsonPath("$.data.name").value("온기 식당"))
+				.andExpect(jsonPath("$.data.description").value("소개 변경"))
+				.andExpect(jsonPath("$.data.phone").value("02-999-0000"))
+				.andExpect(jsonPath("$.data.category").value("CAFE"))
+				.andExpect(jsonPath("$.data.lat").value(closeTo(37.5001, 1e-9)))
+				.andExpect(jsonPath("$.data.lng").value(closeTo(126.9501, 1e-9)))
+				.andExpect(jsonPath("$.data.tags").value(contains("포장 가능", "혼밥")))
+				.andExpect(jsonPath("$.data.imageUrls")
+						.value(contains("https://cdn.lasteat.app/new.jpg", "https://cdn.lasteat.app/c.jpg")));
+	}
+
+	@Test
+	void 설명_전화번호는_생략하면_그대로고_빈_값이면_지운다() throws Exception {
+		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), VALID_INFO).andExpect(status().isOk());
+
+		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), """
+				{"name": "상도 온기", "address": "서울 동작구 상도로 55"}
+				""")
+				.andExpect(jsonPath("$.data.description").value("새 소개"))
+				.andExpect(jsonPath("$.data.phone").value("02-123-4567"));
+
+		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), """
+				{"name": "상도 온기", "address": "서울 동작구 상도로 55", "description": "  ", "phone": "",
+				 "imageUrls": [], "tags": []}
+				""")
+				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.description").doesNotExist())
-				.andExpect(jsonPath("$.data.phone").doesNotExist());
+				.andExpect(jsonPath("$.data.phone").doesNotExist())
+				.andExpect(jsonPath("$.data.imageUrls", hasSize(0)))
+				.andExpect(jsonPath("$.data.tags", hasSize(0)));
 		assertThat(storeImageRepository.findAllByStoreId(onggi.getId())).isEmpty();
+	}
+
+	@Test
+	void 사진이_없는_가게에_대표_사진을_보내면_추가된다() throws Exception {
+		storeImageRepository.deleteAllInBatch();
+
+		owner(put("/api/v1/owner/stores/{id}", onggi.getId()), """
+				{"name": "연남 온기", "address": "서울 동작구 상도로 1", "mainImageUrl": "https://cdn.lasteat.app/first.jpg"}
+				""")
+				.andExpect(jsonPath("$.data.imageUrls").value(contains("https://cdn.lasteat.app/first.jpg")));
 	}
 
 	@Test
@@ -204,6 +243,8 @@ class OwnerStoreWriteApiIntegrationTest {
 				"{\"name\": \"온기\", " + base + ", \"tags\": [\"" + "가".repeat(11) + "\"]}",
 				"{\"name\": \"온기\", " + base + ", \"tags\": [\"포장,배달\"]}",
 				"{\"name\": \"온기\", " + base + ", \"imageUrls\": [\" \"]}",
+				"{\"name\": \"온기\", " + base + ", \"imageUrls\": [\"https://a.jpg\"], \"mainImageUrl\": \"https://b.jpg\"}",
+				"{\"address\": \"서울\"}",
 		};
 		for (String body : bodies) {
 			owner(put("/api/v1/owner/stores/{id}", onggi.getId()), body)

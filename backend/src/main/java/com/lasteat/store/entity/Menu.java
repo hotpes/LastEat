@@ -21,9 +21,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Menu extends BaseTimeEntity {
 
-	public static final int MAX_NAME_LENGTH = 30;
+	public static final int MAX_NAME_LENGTH = 40;
 
-	public static final int MAX_DESCRIPTION_LENGTH = 100;
+	public static final int MAX_DESCRIPTION_LENGTH = 150;
 
 	public static final int MAX_IMAGE_URL_LENGTH = 500;
 

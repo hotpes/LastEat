@@ -31,7 +31,7 @@ public class OwnerMenuService {
 				.description(request.description())
 				.price(request.price())
 				.imageUrl(request.imageUrl())
-				.signature(request.signatureOrDefault())
+				.signature(request.signatureOr(false))
 				.build());
 		return MenuResponse.from(menuRepository.save(menu));
 	}
@@ -40,7 +40,7 @@ public class OwnerMenuService {
 		Menu menu = findOwned(storeId, menuId, memberId);
 		asInvalidInput(() -> {
 			menu.update(request.name(), request.description(), request.price(), request.imageUrl(),
-					request.signatureOrDefault());
+					request.signatureOr(menu.isSignature()));
 			return menu;
 		});
 		return MenuResponse.from(menu);

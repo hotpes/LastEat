@@ -658,16 +658,20 @@
 | 필드 | 타입 | 필수 | 제약 |
 |---|---|:-:|---|
 | name | string | O | 1~30자 |
-| category | string | O | [카테고리](#code-category) |
 | address | string | O | |
-| lat, lng | number | O | 주소를 바꾸면 앱이 지도 SDK로 좌표를 구해 함께 보냄 |
+| category | string | | [카테고리](#code-category) |
+| lat, lng | number | | 둘 다 보내거나 둘 다 생략 |
 | description | string | | 300자 이하 |
 | phone | string | | 숫자와 `-` |
-| imageUrls | string[] | | 최대 30장, 첫 번째가 대표 사진. [업로드](#upload)에서 받은 URL |
-| tags | string[] | | 최대 5개, 각 10자 이하, 쉼표 불가 |
+| imageUrls | string[] | | 사진 목록 통째로 교체. 최대 30장, 첫 번째가 대표 사진. [업로드](#upload)에서 받은 URL |
+| mainImageUrl | string | | 대표 사진(첫 번째)만 교체. 나머지 사진은 그대로, 사진이 없으면 추가 |
+| tags | string[] | | 목록 통째로 교체. 최대 5개, 각 10자 이하, 쉼표 불가 |
 
-- `imageUrls`·`tags`는 보낸 목록으로 통째로 바뀐다. 생략하거나 빈 배열이면 모두 지운다 (기존 값을 유지하려면 조회한 값을 그대로 보낸다)
-- 빈 `description`·`phone`은 `null`로 저장. 영업시간·영업 상태는 바뀌지 않는다
+- **보낸 칸만 바뀐다.** 이름·주소 말고는 생략하거나 `null`이면 기존 값 그대로 (사장님 앱 폼에 카테고리·좌표·태그 칸이 없음)
+- `description`·`phone`은 빈 문자열을 보내면 지운다. `imageUrls`·`tags`는 빈 배열을 보내면 모두 지운다
+- 사진은 `imageUrls`와 `mainImageUrl` 중 하나만 보낸다 (둘 다 보내면 `INVALID_INPUT`)
+- 좌표는 `lat`·`lng`를 보낼 때만 바뀐다. 주소만 바꾸면 지도 위치는 예전 그대로이므로, 주소 변경 시 좌표 처리는 아직 미정 (앱 지도 SDK 또는 서버 주소 검색)
+- 영업시간·영업 상태는 바뀌지 않는다
 - 응답: [가게 정보 조회](#owner-store-get)와 같은 형식. 에러: `STORE_NOT_FOUND`, `INVALID_INPUT`
 
 <a id="owner-hours"></a>
@@ -711,11 +715,11 @@
 
 | 필드 | 타입 | 필수 | 제약 |
 |---|---|:-:|---|
-| name | string | O | 1~30자 |
+| name | string | O | 1~40자 |
 | price | int | O | 0 이상 |
-| description | string | | 100자 이하 |
+| description | string | | 150자 이하 |
 | imageUrl | string | | [업로드](#upload)에서 받은 URL |
-| signature | boolean | | 대표 메뉴 여부, 기본 false |
+| signature | boolean | | 대표 메뉴 여부. 추가할 때 생략하면 false, 수정할 때 생략하면 기존 값 유지 |
 
 응답: 메뉴 객체. 에러: `MENU_NOT_FOUND`
 

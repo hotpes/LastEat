@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Point;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,15 +47,28 @@ public class OwnerStoreService {
 				&& request.tags().stream().anyMatch(tag -> tag.contains(StringListConverter.DELIMITER))) {
 			throw BusinessException.invalidInput("tags", "태그에는 쉼표를 쓸 수 없습니다.");
 		}
+		if ((request.lat() == null) != (request.lng() == null)) {
+			throw BusinessException.invalidInput("lat", "위도와 경도를 함께 보내 주세요.");
+		}
+		if (request.imageUrls() != null && request.mainImageUrl() != null) {
+			throw BusinessException.invalidInput("mainImageUrl", "imageUrls와 함께 보낼 수 없습니다.");
+		}
+		// 생략한 칸은 기존 값 그대로 (사장님 앱 폼에 카테고리·좌표·태그 칸이 없다)
+		Point location = request.lat() == null ? store.getLocation()
+				: new GeoPoint(request.lat(), request.lng()).toPoint();
 		try {
-			store.updateInfo(request.name(), request.category(), request.address(),
-					new GeoPoint(request.lat(), request.lng()).toPoint(), request.phone(), request.description(),
-					request.tags());
+			store.updateInfo(request.name(), orElse(request.category(), store.getCategory()), request.address(),
+					location, orElse(request.phone(), store.getPhone()),
+					orElse(request.description(), store.getDescription()), orElse(request.tags(), store.getTags()));
 		} catch (IllegalArgumentException e) {
 			// DTO 검증을 통과해도 엔티티가 막는 값(유니코드 공백만 있는 이름 등)은 500이 아니라 입력값 오류로
 			throw new BusinessException(ErrorCode.INVALID_INPUT);
 		}
-		replaceImages(store, request.imageUrlsOrEmpty());
+		if (request.imageUrls() != null) {
+			replaceImages(store, request.imageUrls());
+		} else if (StringUtils.hasText(request.mainImageUrl())) {
+			replaceMainImage(store, request.mainImageUrl());
+		}
 	}
 
 	public void changeHours(Long storeId, Long memberId, StoreHoursRequest request) {
@@ -87,6 +102,20 @@ public class OwnerStoreService {
 						.store(store).imageUrl(imageUrls.get(order).strip()).sortOrder(order).build())
 				.toList();
 		storeImageRepository.saveAll(images);
+	}
+
+	// 첫 번째 사진의 주소만 바꾼다. 사진이 없으면 대표 사진으로 추가
+	private void replaceMainImage(Store store, String imageUrl) {
+		List<StoreImage> images = storeImageRepository.findAllByStoreId(store.getId());
+		if (images.isEmpty()) {
+			storeImageRepository.save(StoreImage.builder().store(store).imageUrl(imageUrl.strip()).sortOrder(0).build());
+			return;
+		}
+		images.getFirst().changeImageUrl(imageUrl);
+	}
+
+	private static <T> T orElse(T value, T current) {
+		return value == null ? current : value;
 	}
 
 	private static Set<DayOfWeek> toDays(List<String> codes) {

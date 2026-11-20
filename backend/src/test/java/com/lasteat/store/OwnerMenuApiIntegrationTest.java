@@ -198,6 +198,32 @@ class OwnerMenuApiIntegrationTest {
 	}
 
 	@Test
+	void 수정할_때_signature를_생략하면_대표_메뉴_여부가_그대로다() throws Exception {
+		owner(put("/api/v1/owner/stores/{id}/menus/{menuId}", onggi.getId(), stew.getId()),
+				"{\"name\": \"된장찌개\", \"price\": 9000, \"signature\": true}")
+				.andExpect(jsonPath("$.data.signature").value(true));
+
+		// 사장님 앱 메뉴 폼에는 대표 메뉴 칸이 없다
+		owner(put("/api/v1/owner/stores/{id}/menus/{menuId}", onggi.getId(), stew.getId()),
+				"{\"name\": \"차돌 된장찌개\", \"price\": 11000}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.name").value("차돌 된장찌개"))
+				.andExpect(jsonPath("$.data.signature").value(true));
+
+		owner(put("/api/v1/owner/stores/{id}/menus/{menuId}", onggi.getId(), stew.getId()),
+				"{\"name\": \"차돌 된장찌개\", \"price\": 11000, \"signature\": false}")
+				.andExpect(jsonPath("$.data.signature").value(false));
+	}
+
+	@Test
+	void 메뉴_이름은_40자_설명은_150자까지_저장된다() throws Exception {
+		owner(post("/api/v1/owner/stores/{id}/menus", onggi.getId()),
+				"{\"name\": \"" + "가".repeat(40) + "\", \"price\": 1000, \"description\": \"" + "나".repeat(150) + "\"}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.name").value("가".repeat(40)));
+	}
+
+	@Test
 	void 품절_표시를_켜고_끌_수_있다() throws Exception {
 		owner(patch("/api/v1/owner/stores/{id}/menus/{menuId}/sold-out", onggi.getId(), stew.getId()),
 				"{\"soldOut\": true}")
@@ -263,10 +289,10 @@ class OwnerMenuApiIntegrationTest {
 		String[] bodies = {
 				"{\"name\": \"   \", \"price\": 1000}",
 				"{\"name\": \"　\", \"price\": 1000}",
-				"{\"name\": \"" + "가".repeat(31) + "\", \"price\": 1000}",
+				"{\"name\": \"" + "가".repeat(41) + "\", \"price\": 1000}",
 				"{\"name\": \"김밥\", \"price\": -1}",
 				"{\"name\": \"김밥\"}",
-				"{\"name\": \"김밥\", \"price\": 1000, \"description\": \"" + "가".repeat(101) + "\"}",
+				"{\"name\": \"김밥\", \"price\": 1000, \"description\": \"" + "가".repeat(151) + "\"}",
 		};
 		for (String body : bodies) {
 			owner(post("/api/v1/owner/stores/{id}/menus", onggi.getId()), body)

@@ -55,8 +55,9 @@ public class OwnerStoreController {
 		return ApiResponse.ok(ownerStoreQueryService.getMyStore(storeId, member.memberId()));
 	}
 
-	@Operation(summary = "가게 정보 수정", description = "사진·태그는 보낸 목록으로 통째로 바뀐다 (생략하면 비운다). "
-			+ "주소를 바꾸면 앱이 지도 SDK로 구한 좌표를 함께 보낸다. 영업시간·영업 상태는 바뀌지 않는다. "
+	@Operation(summary = "가게 정보 수정", description = "이름·주소만 필수, 나머지는 보낸 칸만 바뀐다 (생략하면 그대로). "
+			+ "사진은 imageUrls(통째로 교체) 또는 mainImageUrl(대표 사진만 교체). 좌표는 lat·lng를 함께 보낼 때만 바뀐다. "
+			+ "영업시간·영업 상태는 바뀌지 않는다. "
 			+ "응답은 가게 정보 조회와 같은 형식. 에러: STORE_NOT_FOUND, NOT_STORE_OWNER, INVALID_INPUT")
 	@PutMapping("/{storeId}")
 	public ApiResponse<OwnerStoreDetailResponse> update(@PathVariable Long storeId,
